@@ -1,12 +1,7 @@
 package test;
 
-import java.io.File;
 import java.io.IOException;
 
-import jxl.Workbook;
-import jxl.write.Label;
-import jxl.write.WritableSheet;
-import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
 import jxl.write.biff.RowsExceededException;
 import net.sf.json.JSONObject;
@@ -16,7 +11,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import service.DataOutputService;
-import service.ManageCustomerService;
 
 public class TestDataOutput {
 	
@@ -27,7 +21,7 @@ public class TestDataOutput {
 				.getBean("dataOutputService");
 		return service;
 	}
-	
+	//123
 	@Test
 	public void CustomerDataOutput() throws IOException, RowsExceededException, WriteException{
 //		File xlsFile = new File("jxl.xls");
