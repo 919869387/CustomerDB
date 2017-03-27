@@ -22,7 +22,7 @@ public class CustomerDataService {
 	CustomerDataDao customerDataDao;
 	@Autowired
 	ToolRequestParamsToSQLParams toolRequestParamsToSQLParams;
-	
+
 	/**
 	 * 
 	 * 作者：杨潇
@@ -41,7 +41,7 @@ public class CustomerDataService {
 		//由于List中每个对象都是引用，所以相当于是引用传值，已经将值修改了
 		return customers;
 	}
-	
+
 	/**
 	 * 
 	 * 作者：杨潇
@@ -59,18 +59,18 @@ public class CustomerDataService {
 				//得到原始content
 				JSONObject content = JSONObject.fromObject(customer.getContent());
 				Iterator it = content.keys();  
-	            while (it.hasNext()) {  
-	            	String key = (String) it.next();  
-	            	JSONObject value_datetime = content.getJSONObject(key);
-	            	JSONObject newValue_datetime = daleteValue(value_datetime,recordtime);
-	            	if(newValue_datetime.size()!=0){
-	            		newContent.put(key, newValue_datetime);
-	            	}
-	            }
-	            customer.setContent(newContent.toString());
-	            if(!updateCustomer(customer)){
-	            	return false;
-	            }
+				while (it.hasNext()) {  
+					String key = (String) it.next();  
+					JSONObject value_datetime = content.getJSONObject(key);
+					JSONObject newValue_datetime = daleteValue(value_datetime,recordtime);
+					if(newValue_datetime.size()!=0){
+						newContent.put(key, newValue_datetime);
+					}
+				}
+				customer.setContent(newContent.toString());
+				if(!updateCustomer(customer)){
+					return false;
+				}
 			}else{
 				//如果Integrated为false,说明这条记录可以直接删除(没有电话信息)
 				if(!customerDataDao.deleteNoIntegratedCustomer(customerid)){
@@ -80,7 +80,7 @@ public class CustomerDataService {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * 
 	 * 作者：杨潇
@@ -92,16 +92,16 @@ public class CustomerDataService {
 	public JSONObject daleteValue(JSONObject value_datetime,String recordtime){
 		JSONObject newValue_datetime = new JSONObject();
 		Iterator it = value_datetime.keys();  
-        while (it.hasNext()) {  
-        	String value = (String) it.next();//这里的value相当于key
-        	if(!value_datetime.getString(value).equals(recordtime)){
-        		//如果时间不相等就添加进
-        		newValue_datetime.put(value, value_datetime.getString(value));
-        	}
-        }
+		while (it.hasNext()) {  
+			String value = (String) it.next();//这里的value相当于key
+			if(!value_datetime.getString(value).equals(recordtime)){
+				//如果时间不相等就添加进
+				newValue_datetime.put(value, value_datetime.getString(value));
+			}
+		}
 		return newValue_datetime;
 	}
-	
+
 	/*
 	 * 不分页查询,用于数据下载
 	 * 
@@ -201,9 +201,9 @@ public class CustomerDataService {
 		customer.setContent(newContent);
 		return updateCustomer(customer);
 	}
-	
+
 	public boolean insertQuestionDataToCustomer(QuestionData data,String recordtime) {
-		
+
 		Customer customer = new Customer();
 		customer.setCustomerid(data.getCustomerid());
 		customer.setIntegrated(data.isIntegrated());
@@ -551,28 +551,39 @@ public class CustomerDataService {
 		return customer;
 	}
 
-	/*
-	 * 找到标签对应的，时间最近的值
+	/**
+	 * 
+	 * @param valuestr
+	 * @return 得到最近时间值对应的所有值
 	 */
 	public String getLastTimeValue(String valuestr){
 
-		//JSONObject lastValue = new JSONObject();
 		String lastValue = "";
 		JSONObject valueJson = JSONObject.fromObject(valuestr);
 
+		//这次遍历得到最近的时间值
 		Iterator it = valueJson.keys();
-		//String tagKey = "NaN";//初始化
-		String tagvalue = "0000-00-00 00:00:00";//初始化
+		String lastTime = "0000-00-00 00:00:00";//最近的时间,初始化
 		while (it.hasNext()) {
 			String key = (String) it.next();  
 			String value = valueJson.getString(key);
-			if(!compareDateTime(tagvalue,value)){
-				//tagvalue = value;
-				//tagKey = key;
-				lastValue = key;
+			if(!compareDateTime(lastTime,value)){
+				lastTime = value;
 			}
 		}
-		//lastValue.accumulate(tagKey, tagvalue);
+
+		//这次遍历得到最近时间值对应的所有值
+		Iterator it1 = valueJson.keys();
+		while(it1.hasNext()){
+			String key = (String) it1.next();
+			if(valueJson.getString(key).equals(lastTime)){
+				if(lastValue.length()!=0){
+					lastValue = lastValue + ":" +key;
+				}else{
+					lastValue = lastValue + key;
+				}
+			}
+		}
 		return lastValue;
 	}
 
