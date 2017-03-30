@@ -32,15 +32,30 @@ public class DataOutputService {
 	TagTreeService tagTreeService;
 	@Autowired
 	CustomerDataService customerDataService;
-	
-	public void CustomerDataOutputToExcel() throws IOException, RowsExceededException, WriteException{
-		File xlsFile = new File("jxl.xls");
+
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年3月29日下午4:26:49
+	 * 
+	 * 方法名：CustomerDataOutputToExcel
+	 * 方法描述：将消费者全表数据导出到excel中
+	 */
+	public File CustomerDataOutputToExcel(String filePath) throws IOException, RowsExceededException, WriteException{
+		//导出时间
+		Date date = new Date(); 
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+		String dateTime = dateFormat.format(date);
+
+		String xlsName= dateTime;
+
+		File xlsFile = new File(filePath+xlsName+".xls");
 		// 创建一个工作簿
 		WritableWorkbook workbook = Workbook.createWorkbook(xlsFile);
 		// 创建一个工作表
-		WritableSheet sheet = workbook.createSheet("sheet1", 0);
+		WritableSheet sheet = workbook.createSheet("全库消费者数据", 0);
 		//写表头
-		int stRow = 1;//行
+		int stRow = 0;//行
 		int stColumn = 0;//列
 		Map<String,Integer> tagToColumn = new HashMap<String,Integer>();//这个Map用来记录标签与列号的对应关系，eg:{22:3}
 		JSONArray customerDataTagTrees = tagTreeService.getCustomerDataTagTrees();
@@ -49,29 +64,13 @@ public class DataOutputService {
 		int dataStRow = sheet.getRows();
 		List<Customer> customers = customerDataService.getAllCustomerData();
 		writeTableCustomerData(dataStRow, tagToColumn, customers, sheet);
-		//在第一行写数据时间
-		writeTableDateTime(sheet);
-		
+
 		workbook.write();
 		workbook.close();
+		
+		return xlsFile;
 	}
 
-	public void writeTableDateTime(WritableSheet sheet) throws RowsExceededException, WriteException{
-		//根据表的总列数合并第一行
-		int tableColumn = sheet.getColumns();
-		sheet.mergeCells(0, 0, tableColumn-1, 0);
-		//写时间
-		Date date = new Date(); 
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String dateTime = dateFormat.format(date);
-		
-		Label label = new Label(0, 0, "数据导出时间："+dateTime);
-		WritableCellFormat cellFormat = new WritableCellFormat();  
-		cellFormat.setAlignment(jxl.format.Alignment.CENTRE);//设置居中
-		label.setCellFormat(cellFormat);
-		sheet.addCell(label);
-	}
-	
 	/**
 	 * 
 	 * 作者：杨潇
@@ -88,7 +87,7 @@ public class DataOutputService {
 				String key = (String) it.next();  
 				String value = customerInfo.getString(key);
 				int column = tagToColumn.get(key);
-				
+
 				Label label = new Label(column, dataStRow, value);
 				WritableCellFormat cellFormat = new WritableCellFormat();  
 				cellFormat.setAlignment(jxl.format.Alignment.CENTRE);//设置居中
@@ -97,7 +96,7 @@ public class DataOutputService {
 			dataStRow++;
 		}
 	}
-	
+
 	/**
 	 * 
 	 * 作者：杨潇
@@ -119,7 +118,7 @@ public class DataOutputService {
 			column+=nodeWidth;
 		}
 	}
-	
+
 	/**
 	 * 
 	 * 作者：杨潇

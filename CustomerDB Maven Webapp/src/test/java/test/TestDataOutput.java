@@ -12,7 +12,8 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import service.DataOutputService;
 
 public class TestDataOutput {
-	
+
+
 	public DataOutputService getService() {
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 				"spring.xml");
@@ -20,10 +21,12 @@ public class TestDataOutput {
 				.getBean("dataOutputService");
 		return service;
 	}
-	
-	@Test
-	public void CustomerDataOutput() throws IOException, RowsExceededException, WriteException{
 
-		getService().CustomerDataOutputToExcel();
-	}
+	
+	
+//	@Test
+//	public void CustomerDataOutput() throws Exception{
+//		
+//		getService().CustomerDataOutputToExcel();
+//	}
 }
