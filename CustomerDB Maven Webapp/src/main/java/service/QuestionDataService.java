@@ -2,7 +2,6 @@ package service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -11,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import pojo.QuestionData;
-import pojo.TagValue;
 import util.ToolRequestParamsToSQLParams;
 import dao.QuestionDataDao;
 
@@ -23,6 +21,18 @@ public class QuestionDataService {
 	@Autowired
 	ToolRequestParamsToSQLParams toolRequestParamsToSQLParams;
 
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年3月30日下午5:25:23
+	 * 
+	 * 方法名：getQuestionDatasByQid
+	 * 方法描述：根据qid得到所有数据
+	 */
+	public List<QuestionData> getQuestionDatasByQid(int qid) {
+		return questionDataDao.getQuestionDatasByQid(qid);
+	}
+	
 	/**
 	 * 
 	 * 作者：杨潇

@@ -1,13 +1,18 @@
 package service;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
 
 import jxl.Workbook;
 import jxl.format.Colour;
@@ -24,6 +29,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import pojo.Customer;
+import pojo.QuestionData;
+import pojo.TagTree;
 
 
 @Service
@@ -32,7 +39,82 @@ public class DataOutputService {
 	TagTreeService tagTreeService;
 	@Autowired
 	CustomerDataService customerDataService;
+	@Autowired
+	QuestionDataService questionDataService;
+	
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年3月30日下午5:29:44
+	 * 
+	 * 方法名：QuertionDataOutputToExcel
+	 * 方法描述：将问卷数据导出到excel中,不同的问卷写在不同的sheet中
+	 */
+	public File QuertionDataOutputToExcel(String filePath,JSONArray qids) throws IOException, RowsExceededException, WriteException{
+		//导出时间
+		Date date = new Date(); 
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+		String dateTime = dateFormat.format(date);
 
+		File xlsFile = new File(filePath+dateTime+".xls");
+		// 创建一个工作簿
+		WritableWorkbook workbook = Workbook.createWorkbook(xlsFile);
+		for(int i=0;i<qids.size();i++){
+			int qid = (int) qids.get(i);
+			TagTree tagtree = tagTreeService.getTagTree(qid);
+			// 创建一个工作表
+			WritableSheet sheet = workbook.createSheet(tagtree.getQname(), i);
+			//写表头
+			int stRow = 0;//行
+			int stColumn = 0;//列
+			Map<String,Integer> tagToColumn = new HashMap<String,Integer>();//这个Map用来记录标签与列号的对应关系，eg:{22:3}
+			JSONArray questionTagTree = JSONArray.fromObject(tagtree.getTree());
+			writeTableHead(sheet, stColumn, stRow, questionTagTree,tagToColumn);
+			//写消费者数据
+			int dataStRow = sheet.getRows();
+			List<QuestionData> questionDatas = questionDataService.getQuestionDatasByQid(qid);
+			writeTableQuestionData(dataStRow, tagToColumn, questionDatas, sheet);
+		}
+		
+		workbook.write();
+		workbook.close();
+		return xlsFile;
+	}
+	
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年3月30日下午5:30:28
+	 * 
+	 * 方法名：writeTableQuestionData
+	 * 方法描述：把问卷数据写入表中
+	 */
+	public void writeTableQuestionData(int dataStRow,Map<String,Integer> tagToColumn,List<QuestionData> questionDatas,WritableSheet sheet) throws WriteException{
+		for(QuestionData questionData : questionDatas){
+			JSONObject dataInfo = JSONObject.fromObject(questionData.getData());
+			Iterator it = dataInfo.keys();
+			while (it.hasNext()) {
+				String key = (String) it.next();  
+				String value = "";
+				JSONArray valueArr = JSONArray.fromObject(dataInfo.getString(key));
+				for(int i=0;i<valueArr.size();i++){
+					if(value.length()==0){
+						value += valueArr.get(i);
+					}else{
+						value += ":"+valueArr.get(i);
+					}
+				}
+				int column = tagToColumn.get(key);
+
+				Label label = new Label(column, dataStRow, value);
+				WritableCellFormat cellFormat = new WritableCellFormat();  
+				cellFormat.setAlignment(jxl.format.Alignment.CENTRE);//设置居中
+				sheet.addCell(label);
+			}
+			dataStRow++;
+		}
+	}
+	
 	/**
 	 * 
 	 * 作者：杨潇
@@ -47,9 +129,7 @@ public class DataOutputService {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 		String dateTime = dateFormat.format(date);
 
-		String xlsName= dateTime;
-
-		File xlsFile = new File(filePath+xlsName+".xls");
+		File xlsFile = new File(filePath+dateTime+".xls");
 		// 创建一个工作簿
 		WritableWorkbook workbook = Workbook.createWorkbook(xlsFile);
 		// 创建一个工作表
@@ -174,4 +254,46 @@ public class DataOutputService {
 		}
 	}
 
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年3月30日下午5:44:13
+	 * 
+	 * 方法名：outputWriteFile
+	 * 方法描述：将文件输出到前端
+	 */
+	public void outputWriteFile(File file,HttpServletResponse response){
+		response.setContentType("application/force-download");//设置强制下载不打开
+		response.addHeader("Content-Disposition","attachment;fileName=" + file.getName());// 设置文件名
+		byte[] buffer = new byte[1024];
+		FileInputStream fis = null;
+		BufferedInputStream bis = null;
+		try {
+			fis = new FileInputStream(file);
+			bis = new BufferedInputStream(fis);
+			OutputStream os = response.getOutputStream();
+			int i = bis.read(buffer);
+			while (i != -1) {
+				os.write(buffer, 0, i);
+				i = bis.read(buffer);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (bis != null) {
+				try {
+					bis.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			if (fis != null) {
+				try {
+					fis.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 }
