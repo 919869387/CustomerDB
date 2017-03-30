@@ -21,7 +21,7 @@ import service.DataOutputService;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @Controller
-@RequestMapping(value = "/dataouput")
+@RequestMapping(value = "/dataoutput")
 public class DataOuputController {
 	@Autowired
 	DataOutputService dataOutputService;

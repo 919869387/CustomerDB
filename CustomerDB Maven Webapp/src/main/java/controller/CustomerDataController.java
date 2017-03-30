@@ -37,7 +37,7 @@ public class CustomerDataController {
 	
 	
 	/*
-	 * 得到所有符合条件的消费者,不分页,有可选参数
+	 * 得到所有符合条件的消费者,不分页, 有可选参数
 	 * 
 	 * "necessaryParams : {"22": "xxx", "44": "xxxx"}"
 	 * "optionalParams : {"13": "男", "23": "xxxx"}"
