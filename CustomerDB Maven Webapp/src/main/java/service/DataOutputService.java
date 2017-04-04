@@ -60,7 +60,7 @@ public class DataOutputService {
 		// 创建一个工作簿
 		WritableWorkbook workbook = Workbook.createWorkbook(xlsFile);
 		for(int i=0;i<qids.size();i++){
-			int qid = (int) qids.get(i);
+			int qid = Integer.valueOf(qids.get(i).toString());
 			TagTree tagtree = tagTreeService.getTagTree(qid);
 			// 创建一个工作表
 			WritableSheet sheet = workbook.createSheet(tagtree.getQname(), i);

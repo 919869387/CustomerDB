@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import service.DataOutputService;
@@ -35,9 +36,10 @@ public class DataOutputController {
 	 */
 	@RequestMapping(value = "/questionDataOutputToExcel", method = RequestMethod.POST)
 	@ResponseBody
-	public String questionDataOutputToExcel(@RequestBody Map<String, Object> map,HttpSession session,HttpServletResponse response) {
-
-		JSONArray qids = JSONArray.fromObject(map.get("qids"));
+	public String questionDataOutputToExcel(@RequestParam Map<String, Object> map,HttpSession session,HttpServletResponse response) {
+	
+		JSONArray qids = JSONArray.fromObject(map.get("qids").toString().split(","));
+		
 		if(qids.size()==0){
 			return null;
 		}
