@@ -33,9 +33,9 @@ public class DataOutputController {
 	 * 方法名：quertionDataOutputToExcel
 	 * 方法描述：将问卷数据导出到excel中,不同的问卷写在不同的sheet中
 	 */
-	@RequestMapping(value = "/quertionDataOutputToExcel", method = RequestMethod.POST)
+	@RequestMapping(value = "/questionDataOutputToExcel", method = RequestMethod.POST)
 	@ResponseBody
-	public String quertionDataOutputToExcel(@RequestBody Map<String, Object> map,HttpSession session,HttpServletResponse response) {
+	public String questionDataOutputToExcel(@RequestBody Map<String, Object> map,HttpSession session,HttpServletResponse response) {
 
 		JSONArray qids = JSONArray.fromObject(map.get("qids"));
 		if(qids.size()==0){
@@ -47,7 +47,7 @@ public class DataOutputController {
 		//生成文件
 		File file = null;
 		try {
-			file = dataOutputService.QuertionDataOutputToExcel(filePath, qids);
+			file = dataOutputService.QuestionDataOutputToExcel(filePath, qids);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}

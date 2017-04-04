@@ -50,7 +50,7 @@ public class DataOutputService {
 	 * 方法名：QuertionDataOutputToExcel
 	 * 方法描述：将问卷数据导出到excel中,不同的问卷写在不同的sheet中
 	 */
-	public File QuertionDataOutputToExcel(String filePath,JSONArray qids) throws IOException, RowsExceededException, WriteException{
+	public File QuestionDataOutputToExcel(String filePath,JSONArray qids) throws IOException, RowsExceededException, WriteException{
 		//导出时间
 		Date date = new Date(); 
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
