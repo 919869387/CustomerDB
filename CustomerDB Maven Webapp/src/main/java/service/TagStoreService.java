@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import pojo.Tag;
 import util.ExceptionTagStore;
+import util.ToolGlobalParams;
 import dao.TagStoreDao;
 
 @Service
@@ -18,7 +19,19 @@ public class TagStoreService {
 
 	@Autowired
 	TagStoreDao dao;
-	
+
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月6日上午11:24:20
+	 * 
+	 * 方法名：getALLBeusedTagids
+	 * 方法描述：得到所有被使用过的标签id
+	 */
+	public List<Integer> getALLBeusedTagids() {
+		return dao.getALLBeusedTagids();
+	}
+
 	/**
 	 * 
 	 * 作者：杨潇
@@ -32,7 +45,7 @@ public class TagStoreService {
 	public List<Tag> getALLBeusedParentTags() {
 		return dao.getALLBeusedParentTags();
 	}
-	
+
 	/**
 	 * 
 	 * 作者：杨潇
@@ -51,7 +64,7 @@ public class TagStoreService {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * 
 	 * 作者：杨潇
@@ -70,14 +83,16 @@ public class TagStoreService {
 		}
 		return true;
 	}
-	
 
-	/*
-	 * 删除没有被使用的标签
+	/**
 	 * 
-	 * 1.将该标签son_ids的parent_id值修改为0
-	 * 2.将该标签的id,从父标签的son_ids中删除
-	 * 3.删除该标签这条记录
+	 * 作者：杨潇
+	 * 创建时间：2017年4月6日下午12:07:50
+	 * 
+	 * 方法名：deleteTag
+	 * 方法描述:1.检查这个标签是否有儿子和被使用次数，没有儿子并且没有被使用才可以删除
+	 * 		 2.将该标签的id,从父标签的son_ids中删除
+	 *       3.删除该标签这条记录
 	 */
 	@Transactional
 	public boolean deleteTag(int id) {
@@ -85,61 +100,22 @@ public class TagStoreService {
 		tag.setId(id);
 		tag = dao.getTag(tag);
 
-		//1.将该标签son_ids的parent_id值修改为0
-		if(deleteIdOnSonTag(tag)){
+		JSONArray son_ids = JSONArray.fromObject(tag.getSon_ids());
+		//1.如果这个标签没有儿子，没有被使用 才可以删除
+		if(son_ids.size()==0 && tag.getBeused_times()==0){
 			//2.将该标签的id,从父标签的son_ids中删除
 			if(deleteIdOnParentTag(tag)){
 				//3.删除该标签这条记录
 				if(dao.deleteTag(id)){
 					return true;
 				}else{
-					throw new ExceptionTagStore("删除标签,删除标签中英文名等信息时出错");
+					throw new ExceptionTagStore("删除标签,删除标签中文名等信息时出错");
 				}
 			}else{
 				throw new ExceptionTagStore("删除标签,将标签的id,从父标签的son_ids中移除时出错");
 			}
 		}else{
-			throw new ExceptionTagStore("删除标签,将该标签son_ids的parent_id值修改为0时出错");
-		}
-	}
-
-	/**
-	 * 
-	 * 作者：杨潇
-	 * 创建时间：2017年2月22日下午5:18:20
-	 *
-	 * 方法名：getALLTags
-	 * 方法描述：得到所有标签
-	 */
-	public List<Tag> getALLTags() {
-		return dao.getALLTags();
-	}
-
-	/*
-	 * 得到所有可以做父标签的标签
-	 * type=parent
-	 */
-	public List<Tag> getALLParentTags() {
-		return dao.getALLParentTags();
-	}
-
-	/*
-	 * 这里根据父标签，得到所有可以做子标签的标签
-	 * 这里要根据所选的父节点来实时获取可用的儿子节点，避免形成环
-	 * 1.选择parent=0的标签
-	 * 2.排除父标签所在树的最上层标签
-	 */
-	public List<Tag> getSonTagsByParent(int parent_id) {
-		//1.选择parent=0的标签
-		List<Tag> allSonTags = dao.getALLSonTags();
-		if(parent_id==0){
-			return allSonTags;
-		}else{
-			//2.排除父标签所在树的最上层标签
-			Tag root = getFinalRootTag(parent_id);
-			allSonTags.remove(root);//重写了Tag对象的equals方法，可以删除
-
-			return allSonTags;
+			return false;
 		}
 	}
 
@@ -163,9 +139,8 @@ public class TagStoreService {
 
 	/*
 	 * 添加标签
-	 *1.添加标签中英文名等信息
-	 *2.将该标签的id,加入父节点的son_ids中
-	 *3.将该标签son_ids的parent_id值修改为该标签的id
+	 *1.添加标签中名等信息
+	 *2.将该标签的id,加入到父节点的son_ids中
 	 */
 	@Transactional
 	public int insertTag(Tag tag) {
@@ -174,13 +149,8 @@ public class TagStoreService {
 		if(id>0){
 			tag.setId(id);
 			//2.将该标签的id,加入父节点的son_ids中
-			if(addIdToParentTag(tag)){
-				//3.将该标签son_ids的parent_id值修改为该标签的id
-				if(addIdToSonTag(tag)){
-					return id;
-				}else{
-					throw new ExceptionTagStore("添加标签,将该标签son_ids的parent_id值修改为该标签的ids时出错");
-				}
+			if(addIdToParentTag(tag,tag.getParent_id())){
+				return id;
 			}else{
 				throw new ExceptionTagStore("添加标签,将标签的id,加入父标签的son_ids时出错");
 			}
@@ -195,21 +165,24 @@ public class TagStoreService {
 	 * 1.得到父标签
 	 * 2.将id加入父标签的son_ids中
 	 */
-	public boolean addIdToParentTag(Tag tag){
-		if(tag.getParent_id()==0){
-			//如果没有父节点不用添加
+	public boolean addIdToParentTag(Tag tag,int newParent_id){
+		if(newParent_id==0){
 			return true;
 		}
 		//得到父标签
 		Tag parentTag = new Tag();
-		parentTag.setId(tag.getParent_id());
+		parentTag.setId(newParent_id);
 		parentTag = dao.getTag(parentTag);
-		//将id加入父标签的son_ids中
-		JSONArray son_ids = JSONArray.fromObject(parentTag.getSon_ids());
-		son_ids.add(tag.getId());
-		parentTag.setSon_ids(son_ids.toString());
+		if(parentTag.getType().equals(ToolGlobalParams.tagType_Parent)){
+			//将id加入父标签的son_ids中
+			JSONArray son_ids = JSONArray.fromObject(parentTag.getSon_ids());
+			son_ids.add(tag.getId());
+			parentTag.setSon_ids(son_ids.toString());
 
-		return dao.updateTag(parentTag);
+			return dao.updateTag(parentTag);
+		}else{
+			return false;
+		}
 	}
 	/*
 	 * 将该标签的id,从父标签的son_ids中移除
@@ -233,57 +206,54 @@ public class TagStoreService {
 		return dao.updateTag(parentTag);
 	}
 
-	/*
-	 * 将该标签son_ids的parent_id值修改为该标签的id
-	 * 
-	 * 1.得到sonTag
-	 * 2.将id加入子标签的parent_id中
-	 */
-	public boolean addIdToSonTag(Tag tag){
-		//得到sonTags
-		JSONArray son_ids = JSONArray.fromObject(tag.getSon_ids());
-		//将id加入子标签的parent_id中
-		for(int i=0;i<son_ids.size();i++){
-			Tag sonTag = new Tag();
-			sonTag.setId(son_ids.getInt(i));
-			sonTag = dao.getTag(sonTag);
-			sonTag.setParent_id(tag.getId());
-			if(!dao.updateTag(sonTag)){
-				return false;
-			}
-		}
-		return true;
-	}
-	/*
-	 * 将该标签son_ids的parent_id值修改为0
-	 * 
-	 * 1.得到sonTag
-	 * 2.将子标签的parent_id修改为0
-	 */
-	public boolean deleteIdOnSonTag(Tag tag){
-		//得到sonTags
-		JSONArray son_ids = JSONArray.fromObject(tag.getSon_ids());
-		//将id加入子标签的parent_id中
-		for(int i=0;i<son_ids.size();i++){
-			Tag sonTag = new Tag();
-			sonTag.setId(son_ids.getInt(i));
-			sonTag = dao.getTag(sonTag);
-			sonTag.setParent_id(0);
-			if(!dao.updateTag(sonTag)){
-				return false;
-			}
-		}
-		return true;
-	}
-
-
 	public Tag getTag(Tag tag) {
 		return dao.getTag(tag);
 	}
 
-
-	public boolean updateTag(Tag tag) {
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月6日下午4:18:10
+	 * 
+	 * 方法名：updateTagName
+	 * 方法描述：修改标签名
+	 */
+	public boolean updateTagName(Tag tag) {
 		return dao.updateTag(tag);
+	}
+
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月6日下午4:20:09
+	 * 
+	 * 方法名：updateTagRelation
+	 * 方法描述：修改标签的父子关系
+	 * 		1.将该标签id从原来父标签的son_ids中删除
+	 * 		2.将该标签id添加进,新父标签的son_ids中
+	 * 		3.修改该标签的parent_id
+	 */
+	@Transactional
+	public boolean updateTagRelation(Tag tag,int newParent_id) {
+		if(tag.getParent_id()==newParent_id){
+			//父节点没有变,不用修改
+			return true;
+		}else{
+			if(deleteIdOnParentTag(tag)){
+				if(addIdToParentTag(tag,newParent_id)){
+					tag.setParent_id(newParent_id);
+					if(dao.updateTag(tag)){
+						return true;
+					}else{
+						throw new ExceptionTagStore("修改标签,修改该标签的parent_id时出错");
+					}
+				}else{
+					throw new ExceptionTagStore("修改标签,将标签的id加入新父标签的son_ids时出错");
+				}
+			}else{
+				throw new ExceptionTagStore("修改标签,将该标签id从原来父标签的son_ids中删除时出错");
+			}
+		}
 	}
 
 	/**

@@ -1,7 +1,5 @@
 package service;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,29 +11,16 @@ public class SystemDynamicValuesService {
 	@Autowired
 	SystemDynamicValuesDao systemDynamicValuesDao;
 
-	/*
-	 * 根据name,得到所有的动态值,相当于系统初始化时使用
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月6日下午5:14:44
+	 * 
+	 * 方法名：getSystemDynamicValuesByName
+	 * 方法描述：根据name,得到系统动态值
 	 */
 	public SystemDynamicValues getSystemDynamicValuesByName(String name) {
 		return systemDynamicValuesDao.getSystemDynamicValuesByName(name);
 	}
 
-	/*
-	 * 得到所有的动态值
-	 */
-	public List<SystemDynamicValues> getAllSystemDynamicValues() {
-		return systemDynamicValuesDao.getAllSystemDynamicValues();
-	}
-
-	/*
-	 * 根据id,得到对应动态值
-	 */
-	public SystemDynamicValues getSystemDynamicValuesById(int id) {
-		return systemDynamicValuesDao.getSystemDynamicValuesById(id);
-	}
-
-	//根据id,修改动态值
-	public boolean updateDynamicvalues(SystemDynamicValues systemDynamicValues) {
-		return systemDynamicValuesDao.updateDynamicvalues(systemDynamicValues);
-	}
 }

@@ -23,7 +23,29 @@ public class TagStoreDao {
 	@Autowired
 	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月6日上午11:22:17
+	 * 
+	 * 方法名：getALLBeusedTags
+	 * 方法描述：得到所有被使用过的标签id
+	 */
+	public List<Integer> getALLBeusedTagids() {
+		String sql = "select id from tagstore where beused_times>0";
+		RowMapper<Integer> rowMapper = new BeanPropertyRowMapper<>(Integer.class);
+		List<Integer> beused_ids = namedParameterJdbcTemplate.query(sql, rowMapper);
+		return beused_ids;
+	}
+	
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月6日上午11:22:41
+	 * 
+	 * 方法名：getTag
+	 * 方法描述：得到一个标签
+	 */
 	public Tag getTag(Tag tag) {
 		String sql = "select * from tagstore where id=:id";
 		RowMapper<Tag> rowMapper = new BeanPropertyRowMapper<>(Tag.class);
@@ -53,17 +75,6 @@ public class TagStoreDao {
 		SqlParameterSource paramSource = new BeanPropertySqlParameterSource(tag);
 		int count = namedParameterJdbcTemplate.update(sql, paramSource);
 		return count > 0 ? true : false;
-	}
-
-	/*
-	 * 得到所有标签
-	 * 根据被使用次数降序排序
-	 */
-	public List<Tag> getALLTags() {
-		String sql = "select * from tagstore order by id asc";
-		RowMapper<Tag> rowMapper = new BeanPropertyRowMapper<>(Tag.class);
-		List<Tag> tags = namedParameterJdbcTemplate.query(sql, rowMapper);
-		return tags;
 	}
 	
 	/*

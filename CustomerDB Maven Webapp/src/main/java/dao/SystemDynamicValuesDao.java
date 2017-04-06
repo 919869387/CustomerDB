@@ -1,10 +1,7 @@
 package dao;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -17,8 +14,13 @@ public class SystemDynamicValuesDao {
 	@Autowired
 	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 	
-	/*
-	 * 根据name,得到所有的动态值,相当于系统初始化时使用
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月6日下午5:14:30
+	 * 
+	 * 方法名：getSystemDynamicValuesByName
+	 * 方法描述：根据name,得到系统动态值
 	 */
 	public SystemDynamicValues getSystemDynamicValuesByName(String name) {
 
@@ -29,36 +31,4 @@ public class SystemDynamicValuesDao {
 		return (SystemDynamicValues)namedParameterJdbcTemplate.queryForObject(sql, ps, new BeanPropertyRowMapper(SystemDynamicValues.class));
 	}
 	
-	/*
-	 * 得到所有的动态值
-	 */
-	public List<SystemDynamicValues> getAllSystemDynamicValues() {
-
-		String sql = "select * from systemdynamicvalues ORDER BY id ASC";
-		
-		RowMapper<SystemDynamicValues> rowMapper = new BeanPropertyRowMapper<>(
-				SystemDynamicValues.class);
-		List<SystemDynamicValues> allSystemDynamicValues = namedParameterJdbcTemplate.query(sql, rowMapper);
-		return allSystemDynamicValues;
-	}
-	
-	/*
-	 * 根据id,得到对应动态值
-	 */
-	public SystemDynamicValues getSystemDynamicValuesById(int id) {
-
-		String sql = "select * from systemdynamicvalues where id="+id+"";
-		SystemDynamicValues systemDynamicValues = new SystemDynamicValues();
-		systemDynamicValues.setId(id);
-		SqlParameterSource ps=new BeanPropertySqlParameterSource(systemDynamicValues);
-		return (SystemDynamicValues)namedParameterJdbcTemplate.queryForObject(sql, ps, new BeanPropertyRowMapper(SystemDynamicValues.class));
-	}
-	
-	//根据id,修改动态值
-	public boolean updateDynamicvalues(SystemDynamicValues systemDynamicValues) {
-		String sql = "update systemdynamicvalues set dynamicvalues=:dynamicvalues where id=:id";
-		SqlParameterSource paramSource = new BeanPropertySqlParameterSource(systemDynamicValues);
-		int count = namedParameterJdbcTemplate.update(sql, paramSource);
-		return count > 0 ? true : false;
-	}
 }
