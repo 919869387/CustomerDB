@@ -29,13 +29,13 @@ public class TagStoreDao {
 	 * 创建时间：2017年4月6日上午11:22:17
 	 * 
 	 * 方法名：getALLBeusedTags
-	 * 方法描述：得到所有被使用过的标签id
+	 * 方法描述：得到所有被使用过的标签(为了得到id)
 	 */
-	public List<Integer> getALLBeusedTagids() {
+	public List<Tag> getALLBeusedTagids() {
 		String sql = "select id from tagstore where beused_times>0";
-		RowMapper<Integer> rowMapper = new BeanPropertyRowMapper<>(Integer.class);
-		List<Integer> beused_ids = namedParameterJdbcTemplate.query(sql, rowMapper);
-		return beused_ids;
+		RowMapper<Tag> rowMapper = new BeanPropertyRowMapper<>(Tag.class);
+		List<Tag> tags = namedParameterJdbcTemplate.query(sql, rowMapper);
+		return tags;
 	}
 	
 	/**

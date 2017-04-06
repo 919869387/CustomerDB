@@ -1,5 +1,6 @@
 package service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import net.sf.json.JSONArray;
@@ -28,8 +29,13 @@ public class TagStoreService {
 	 * 方法名：getALLBeusedTagids
 	 * 方法描述：得到所有被使用过的标签id
 	 */
-	public List<Integer> getALLBeusedTagids() {
-		return dao.getALLBeusedTagids();
+	public List getALLBeusedTagids() {
+		List<Integer> beUsedTagids = new ArrayList<Integer>();
+		List<Tag> beUsedTags = dao.getALLBeusedTagids();
+		for(Tag tag:beUsedTags){
+			beUsedTagids.add(tag.getId());
+		}
+		return beUsedTagids;
 	}
 
 	/**
