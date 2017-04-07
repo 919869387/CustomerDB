@@ -20,7 +20,118 @@ public class TagStoreService {
 
 	@Autowired
 	TagStoreDao dao;
+	
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月7日下午5:50:17
+	 * 
+	 * 方法名：getTagsForTagManage
+	 * 方法描述：得到所有可以用作标签对应的标签,将标签分为了text、radio两类
+	 * 
+	 * 没有子节点的父节点也会有!!!
+	 */
+	public JSONObject getTagsForTagManage(){
+		//得到了所有最上层标签
+		List<Tag> tags = dao.getALLSonTags();
 
+		JSONArray textTrees = new JSONArray();
+		JSONArray radioTrees = new JSONArray();
+
+		//将不同类型的标签放入不同数组
+		for(int i=0;i<tags.size();i++){
+			Tag tag = tags.get(i);
+			if(tag.getType().equals(ToolGlobalParams.tagType_Text)){
+				//如果是文本，添加到文本数组
+				JSONObject node = new JSONObject();
+				node.put("id", tag.getId());
+				node.put("type", tag.getType());
+				node.put("name", tag.getCnname());
+				textTrees.add(node);
+			}else if(tag.getType().equals(ToolGlobalParams.tagType_Radio)){
+				//如果是单选，添加到单选数组
+				JSONObject node = new JSONObject();
+				node.put("id", tag.getId());
+				node.put("type", tag.getType());
+				node.put("name", tag.getCnname());
+				radioTrees.add(node);
+			}else{
+				//如果是父标签,并且父标签有子标签
+				//这里一个树拆成text树和radio树
+				JSONObject textTree = getParentTagTypeTreeForTagManage(tag,ToolGlobalParams.tagType_Text);
+				JSONObject radioTree = getParentTagTypeTreeForTagManage(tag,ToolGlobalParams.tagType_Radio);
+				if(textTree!=null){
+					textTrees.add(textTree);
+				}
+				if(radioTree!=null){
+					radioTrees.add(radioTree);
+				}
+			}
+		}
+
+		
+		JSONObject textTrees_Parent = new JSONObject();
+		textTrees_Parent.put("id", 0);
+		textTrees_Parent.put("type", ToolGlobalParams.tagType_Parent);
+		textTrees_Parent.put("name", "文本类型标签树");
+		textTrees_Parent.put("children", textTrees);
+		
+		JSONObject radioTrees_Parent = new JSONObject();
+		radioTrees_Parent.put("id", 0);
+		radioTrees_Parent.put("type", ToolGlobalParams.tagType_Parent);
+		radioTrees_Parent.put("name", "选择类型标签树");
+		radioTrees_Parent.put("children", radioTrees);
+		
+		JSONObject tagTrees = new JSONObject();
+		tagTrees.put("textTrees", textTrees_Parent);
+		tagTrees.put("radioTrees", radioTrees_Parent);
+		return tagTrees;
+	}
+
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月7日下午5:45:09
+	 * 
+	 * 方法名：getParentTagTypeTreeForTagManage
+	 * 没有子节点的父节点也会添加！！！
+	 * 方法描述：得到树的所有Text节点结构,使用深度遍历
+	 * 方法描述：得到树的所有Radio节点结构,使用深度遍历
+	 * 
+	 * 树的类型根据treeType决定
+	 */
+	public JSONObject getParentTagTypeTreeForTagManage(Tag parentTag,String treeType){
+		JSONArray son_ids = JSONArray.fromObject(parentTag.getSon_ids());
+
+		JSONArray children = new JSONArray();
+		for(int i=0;i<son_ids.size();i++){
+			int tagid = son_ids.getInt(i);
+			Tag tag = new Tag();
+			tag.setId(tagid);
+			tag = dao.getTag(tag);
+			if(tag.getType().equals(treeType)){
+				JSONObject textTag = new JSONObject();
+				textTag.put("id", tag.getId());
+				textTag.put("type", tag.getType());
+				textTag.put("name", tag.getCnname());
+				children.add(textTag);
+			}else if(tag.getType().equals(ToolGlobalParams.tagType_Parent)){
+				JSONObject textChildTree = getParentTagTypeTreeForTagManage(tag,treeType);
+				if(textChildTree!=null){
+					children.add(textChildTree);
+				}
+			}
+		}
+
+		JSONObject typeTree = new JSONObject();
+		typeTree.put("id", parentTag.getId());
+		typeTree.put("type", parentTag.getType());
+		typeTree.put("name", parentTag.getCnname());
+		typeTree.put("children", children);
+		return typeTree;
+	}
+	
+	
 	/**
 	 * 
 	 * 作者：杨潇
@@ -280,14 +391,14 @@ public class TagStoreService {
 		//将不同类型的标签放入不同数组
 		for(int i=0;i<tags.size();i++){
 			Tag tag = tags.get(i);
-			if(tag.getType().equals("text")){
+			if(tag.getType().equals(ToolGlobalParams.tagType_Text)){
 				//如果是文本，添加到文本数组
 				JSONObject node = new JSONObject();
 				node.put("id", tag.getId());
 				node.put("type", tag.getType());
 				node.put("name", tag.getCnname());
 				textTrees.add(node);
-			}else if(tag.getType().equals("radio")){
+			}else if(tag.getType().equals(ToolGlobalParams.tagType_Radio)){
 				//如果是单选，添加到单选数组
 				JSONObject node = new JSONObject();
 				node.put("id", tag.getId());
@@ -297,8 +408,8 @@ public class TagStoreService {
 			}else{
 				//如果是父标签,并且父标签有子标签
 				//这里一个树拆成text树和radio树
-				JSONObject textTree = getParentTagTypeTree(tag,"text");
-				JSONObject radioTree = getParentTagTypeTree(tag,"radio");
+				JSONObject textTree = getParentTagTypeTree(tag,ToolGlobalParams.tagType_Text);
+				JSONObject radioTree = getParentTagTypeTree(tag,ToolGlobalParams.tagType_Radio);
 				if(textTree!=null){
 					textTrees.add(textTree);
 				}
@@ -344,7 +455,7 @@ public class TagStoreService {
 				textTag.put("type", tag.getType());
 				textTag.put("name", tag.getCnname());
 				children.add(textTag);
-			}else if(tag.getType().equals("parent")){
+			}else if(tag.getType().equals(ToolGlobalParams.tagType_Parent)){
 				JSONObject textChildTree = getParentTagTypeTree(tag,treeType);
 				if(textChildTree!=null){
 					children.add(textChildTree);

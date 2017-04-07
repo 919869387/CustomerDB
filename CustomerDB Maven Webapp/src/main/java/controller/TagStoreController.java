@@ -66,7 +66,7 @@ public class TagStoreController {
 		JSONObject responsejson = new JSONObject();
 
 		//这里将可以用来做对应的标签分成了：text radio两类
-		JSONObject tagTrees  = tagStoreService.getTagsForTagTransform();
+		JSONObject tagTrees  = tagStoreService.getTagsForTagManage();
 
 		JSONObject result = new JSONObject();
 		result.put("textTrees", tagTrees.get("textTrees"));
@@ -184,7 +184,7 @@ public class TagStoreController {
 	 * 方法名：insertTag
 	 * 方法描述：添加标签(同时维护父子关系)
 	 * 
-	 * 请求参数：cname、type、parent_id
+	 * 请求参数：cnname、type、parent_id
 	 */
 	@RequestMapping(value = "/insertTag", method = RequestMethod.POST)
 	@ResponseBody
