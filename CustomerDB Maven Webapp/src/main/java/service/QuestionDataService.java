@@ -79,7 +79,7 @@ public class QuestionDataService {
 	 * 
 	 * 步骤：要先检查是否存在,如果已经存在就更新操作，保证数据唯一性
 	 */
-	public boolean insertQuestionData(QuestionData questionData){
+	public boolean insertOrUpdateQuestionData(QuestionData questionData){
 		if(questionDataDao.existQuestionDataByCustomeridAndQid(questionData)){
 			return questionDataDao.updateQuestionData(questionData);
 		}else{

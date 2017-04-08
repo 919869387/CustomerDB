@@ -176,42 +176,35 @@ public class CustomerDataService {
 		return customers;
 	}
 
-
-
-	/*
-	 * 将Data表中的记录,导入进Customerdata中
-	 * 这里其实是将问卷的数据想导入Data表,再导入Customerdata表中
-
-	 * 这个过程不会增加消费者，只是在更新消费者的信息
-	 */
 	/**
 	 * 
 	 * 作者：杨潇
-	 * 创建时间：2017年3月1日下午7:20:18
-	 *
-	 * 方法名：updateQuestionDataToCustomer
-	 * 方法描述：将问卷数据更新就消费者表中
+	 * 创建时间：2017年4月8日上午11:25:08
+	 * 
+	 * 方法名：insertOrUpdateQuestionDataToCustomer
+	 * 方法描述：将问卷数据更新就消费者表中。根据Customerdata表是否有这个消费者,来决定是更新还是插入
 	 */
-	public boolean updateQuestionDataToCustomer(QuestionData data,String recordtime) {
-		//原来Customerdata表有这个消费者
-		//将原来数据更新
-		Customer customer = customerDataDao.getCustomerByCustomerid(data.getCustomerid());
-		String oldContent = customer.getContent();
-		String newContent = updateCustomerContent(oldContent,data.getData(),recordtime);
-		customer.setContent(newContent);
-		return updateCustomer(customer);
+	public boolean insertOrUpdateQuestionDataToCustomer(QuestionData data,String recordtime) {
+		if(existCustomerByCustomerid(data.getCustomerid())){
+			//原来Customerdata表有这个消费者
+			//将原来数据更新
+			Customer customer = customerDataDao.getCustomerByCustomerid(data.getCustomerid());
+			String oldContent = customer.getContent();
+			String newContent = updateCustomerContent(oldContent,data.getData(),recordtime);
+			customer.setContent(newContent);
+			return updateCustomer(customer);
+		}else{
+			//原来Customerdata表没有这个消费者
+			Customer customer = new Customer();
+			customer.setCustomerid(data.getCustomerid());
+			customer.setIntegrated(data.isIntegrated());
+			String oldContent = new JSONObject().toString();
+			String content = updateCustomerContent(oldContent,data.getData(),recordtime);
+			customer.setContent(content);
+			return insertCustomer(customer);
+		}
 	}
-
-	public boolean insertQuestionDataToCustomer(QuestionData data,String recordtime) {
-
-		Customer customer = new Customer();
-		customer.setCustomerid(data.getCustomerid());
-		customer.setIntegrated(data.isIntegrated());
-		String oldContent = new JSONObject().toString();
-		String content = updateCustomerContent(oldContent,data.getData(),recordtime);
-		customer.setContent(content);
-		return insertCustomer(customer);
-	}
+	
 
 	/**
 	 * 

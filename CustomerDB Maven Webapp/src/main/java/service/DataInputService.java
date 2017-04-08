@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import pojo.Customer;
 import pojo.QuestionData;
 import pojo.Tag;
 import pojo.TagTree;
@@ -203,28 +204,30 @@ public class DataInputService {
 			if(sampleData_arr.size() != 0){
 				//说明从问卷数据库中获取到了数据
 				for(int i=0;i<sampleData_arr.size();i++){
+					JSONObject sampleData = sampleData_arr.getJSONObject(i);
+
+					QuestionData questionData = null;
 					//检查问卷数据以及CustomerData表中是否有customerid
-					if(existCustomerIdInSampleDataAndCustomerData(sampleData_arr.getJSONObject(i))){
+					if(existCustomerIdInCustomerData(sampleData)){
 						//如果有customerid
-						QuestionData questionData = createQuestionDataPoJoHaveCustomerId(sampleData_arr.getJSONObject(i), qid);
-						//1.将记录放入QuestionData表中
-						if(questionDataService.insertQuestionData(questionData)){
-							//2.将记录放入Customerdata表中
-							if(customerDataService.updateQuestionDataToCustomer(questionData, recordtime)){
-								insertRecordCount++;
-							}else{
-								throw new ExceptionCustomerData("向CustomerData插入数据失败"); 
-							}
-						}else{
-							throw new ExceptionQuestionData("向QuestionData插入数据失败!");
-						}
+						questionData = createQuestionDataPoJoHaveCustomerId(sampleData, qid);
 					}else{
 						//如果没有customerid
-						QuestionData questionData = createQuestionDataPoJoNoCustomerId(sampleData_arr.getJSONObject(i), qid);
+						//检查Telnumber是否在CustomerData表中
+						String customerId = existTelNumberInCustomerData(sampleData);
+						if(customerId!=null){
+							//电话在Customerdata表中存在
+							questionData = createQuestionDataPoJo_NoCustomerId_ExistTelnumberInCustomerData(sampleData, qid, customerId);
+						}else{
+							//电话在Customerdata表中不存在,或者没有电话
+							questionData = createQuestionDataPoJoNoCustomerId(sampleData, qid);
+						}
+					}
+					if(questionData!=null){
 						//1.将记录放入QuestionData表中
-						if(questionDataService.insertQuestionData(questionData)){
+						if(questionDataService.insertOrUpdateQuestionData(questionData)){
 							//2.将记录放入Customerdata表中
-							if(customerDataService.insertQuestionDataToCustomer(questionData, recordtime)){
+							if(customerDataService.insertOrUpdateQuestionDataToCustomer(questionData, recordtime)){
 								insertRecordCount++;
 							}else{
 								throw new ExceptionCustomerData("向CustomerData插入数据失败"); 
@@ -234,13 +237,40 @@ public class DataInputService {
 						}
 					}
 				}
-			}
-			//3.修改tagtree表中该问卷对应的RecordCount值
-			if(!tagTreeService.updateRecordCountByQid(qid,insertRecordCount)){
-				throw new ExceptionTagTree("修改RecordCount时失败！ ");
+				//3.修改tagtree表中该问卷对应的RecordCount值
+				if(!tagTreeService.updateRecordCountByQid(qid,insertRecordCount)){
+					throw new ExceptionTagTree("修改RecordCount时失败！ ");
+				}
 			}
 		}
 		return insertRecordCount;
+	}
+
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月8日上午10:43:45
+	 * 
+	 * 方法名：existTelNumberInCustomerData
+	 * 方法描述：检查电话号码是否在CustomerData表中存在
+	 * 
+	 * 存在返回customerid,不存在返回null
+	 */
+	public String existTelNumberInCustomerData(JSONObject data){
+		String customerId = null;
+
+		if(data.containsKey(ToolGlobalParams.telnumberTagId)){
+			JSONArray telnumberArr = data.getJSONArray(ToolGlobalParams.telnumberTagId);
+			if(telnumberArr.size()==1){
+				JSONObject customerTel = new JSONObject();
+				customerTel.put(ToolGlobalParams.telnumberTagId, telnumberArr.getString(0).trim());
+				if(customerDataService.existCustomerByCustomerTel(customerTel)){
+					Customer customer = customerDataService.getCustomerByTel(customerTel);
+					customerId = customer.getCustomerid();
+				}
+			}
+		}
+		return customerId;
 	}
 
 	//	/**
@@ -265,10 +295,10 @@ public class DataInputService {
 	 * 作者：杨潇
 	 * 创建时间：2017年3月1日下午5:45:25
 	 *
-	 * 方法名：existCustomerIdInSampleDataAndCustomerData
+	 * 方法名：existCustomerIdInCustomerData
 	 * 方法描述：检测问卷数据中是否有customerid,有customerid时,是否在customerdata表中存在
 	 */
-	public boolean existCustomerIdInSampleDataAndCustomerData(JSONObject data){
+	public boolean existCustomerIdInCustomerData(JSONObject data){
 		boolean result = false;
 		JSONArray customeridArr = data.getJSONArray("customerId");//得到每条记录的customerId,从问卷过来的customerId是这样
 		if(customeridArr.size()==1){
@@ -303,6 +333,33 @@ public class DataInputService {
 		return questionData;
 	}
 
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月8日上午10:55:34
+	 * 
+	 * 方法名：createQuestionDataPoJo_NoCustomerId_ExistTelnumberInCustomerData
+	 * 方法描述：数据没有customerid,但是Telnumber在CustomerData中
+	 */
+	public QuestionData createQuestionDataPoJo_NoCustomerId_ExistTelnumberInCustomerData(JSONObject data,int qid,String customerId){
+		data.remove("customerId");//将每条记录的customerid键值对删除
+
+		QuestionData questionData = new QuestionData();
+		questionData.setData(data.toString());
+		questionData.setCustomerid(customerId);
+		questionData.setQid(qid);
+
+		return questionData;
+	}
+
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月8日上午10:56:26
+	 * 
+	 * 方法名：createQuestionDataPoJoNoCustomerId
+	 * 方法描述：数据没有customerid,Telnumber不在CustomerData中
+	 */
 	public QuestionData createQuestionDataPoJoNoCustomerId(JSONObject data,int qid){
 		data.remove("customerId");//将每条记录的customerid键值对删除
 
@@ -319,7 +376,7 @@ public class DataInputService {
 		}else{
 			questionData.setIntegrated(false);
 		}
-		
+
 		questionData.setData(data.toString());
 		questionData.setCustomerid(customerid);
 		questionData.setQid(qid);
