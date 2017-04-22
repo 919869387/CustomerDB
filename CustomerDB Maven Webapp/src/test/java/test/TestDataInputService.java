@@ -11,6 +11,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import service.DataInputService;
+import util.ToolGlobalParams;
 
 public class TestDataInputService {
 
@@ -21,6 +22,29 @@ public class TestDataInputService {
 
 		return service;
 	}
+	
+//	@Test
+//	public void InputQuertionDataAndCustomerData(){
+//		int qid = 1653;
+//		//int qid = 1675;
+//		JSONArray sampleData_arr = new JSONArray();
+//		JSONObject sampleData = new JSONObject();
+//		
+//		JSONArray valueTel = new JSONArray();
+//		valueTel.add("123");
+//		JSONArray valueCustomerID = new JSONArray();
+//		valueCustomerID.add("xxxx");
+//		JSONArray valueOther = new JSONArray();
+//		valueOther.add("游戏11");
+//
+//		sampleData.put("106", valueOther);
+//		sampleData.put(ToolGlobalParams.telnumberTagId, valueTel);
+//		sampleData.put("customerId", valueCustomerID);
+//		
+//		sampleData_arr.add(sampleData);
+//		
+//		System.out.println(getService().InputQuertionDataAndCustomerData(qid, sampleData_arr));
+//	}
 	
 //	@Test
 //	public void deleteAllInfoByQid(){

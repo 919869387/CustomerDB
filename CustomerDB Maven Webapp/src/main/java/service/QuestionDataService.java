@@ -44,10 +44,10 @@ public class QuestionDataService {
 	public boolean deleteQuestionDatasByQid(int qid) {
 		int getCount = questionDataDao.getQuestionDataCountByQid(qid);
 		int deleteCount = questionDataDao.deleteQuestionDatasByQid(qid);
-		if(getCount==deleteCount){
-			return true;
-		}else{
+		if(getCount!=0 && deleteCount==0){
 			return false;
+		}else{
+			return true;
 		}
 	}
 
