@@ -42,6 +42,8 @@ public class CustomerDataController {
 	 * "necessaryParams : {"22": "xxx", "44": "xxxx"}"
 	 * "optionalParams : {"13": "男", "23": "xxxx"}"
 	 * "removeCustomerIds":[]
+	 * 
+	 * "infointegratedSwitch":true//对信息完整性是否筛选的开关
 	 */
 	@RequestMapping(value = "/getCustomersForOptionalParams", method = POST)
 	@ResponseBody
@@ -52,8 +54,13 @@ public class CustomerDataController {
 		JSONObject requestNecessaryParams = JSONObject.fromObject(map.get("necessaryParams"));//筛选条件
 		JSONObject requestOptionalParams = JSONObject.fromObject(map.get("optionalParams"));//筛选条件
 		JSONArray requestRemoveCustomerIds = JSONArray.fromObject(map.get("removeCustomerIds"));//要排除的消费者id
-
-		List<Customer> customers = customerDataService.getCustomersForOptionalParams(requestNecessaryParams, requestOptionalParams, requestRemoveCustomerIds);
+		
+		boolean infointegratedSwitch = false;//默认开关是关的,就是要筛选信息不完整的消费者
+		if(map.containsKey("infointegratedSwitch")){
+			infointegratedSwitch = (boolean) map.get("infointegratedSwitch");
+		}
+		
+		List<Customer> customers = customerDataService.getCustomersForOptionalParams(requestNecessaryParams, requestOptionalParams, requestRemoveCustomerIds,infointegratedSwitch);
 		List<Customer_Out> customer_Outs = new ArrayList<>();
 		for(Customer customer : customers){
 			ManageCustomer manageCustomer = manageCustomerService.getManageCustomerByCustomerId(customer.getCustomerid());
@@ -72,6 +79,8 @@ public class CustomerDataController {
 	 * 
 	 * "contentParams":"{"33": "男", "12": "xxxx"}"
 	 * "removeCustomerIds":[]
+	 * 
+	 * "infointegratedSwitch":true//对信息完整性是否筛选的开关
 	 */
 	@RequestMapping(value = "/getCustomers", method = POST)
 	@ResponseBody
@@ -81,7 +90,12 @@ public class CustomerDataController {
 		JSONObject requestContentParams = JSONObject.fromObject(map.get("contentParams"));//筛选条件
 		JSONArray requestRemoveCustomerIds = JSONArray.fromObject(map.get("removeCustomerIds"));//要排除的消费者id
 
-		List<Customer> customers = customerDataService.getCustomers(requestContentParams, requestRemoveCustomerIds);
+		boolean infointegratedSwitch = false;//默认开关是关的,就是要筛选信息不完整的消费者
+		if(map.containsKey("infointegratedSwitch")){
+			infointegratedSwitch = (boolean) map.get("infointegratedSwitch");
+		}
+		
+		List<Customer> customers = customerDataService.getCustomers(requestContentParams, requestRemoveCustomerIds,infointegratedSwitch);
 		List<Customer_Out> customer_Outs = new ArrayList<>();
 		for(Customer customer : customers){
 			ManageCustomer manageCustomer = manageCustomerService.getManageCustomerByCustomerId(customer.getCustomerid());
@@ -108,6 +122,8 @@ public class CustomerDataController {
 	 * "removeCustomerIds":[]
 	 * "currentPageNum":1
 	 * "eachPageRowNum":10
+	 * 
+	 * "infointegratedSwitch":true//对信息完整性是否筛选的开关
 	 */
 	@RequestMapping(value = "/getPageCustomerForOptionalParams", method = POST)
 	@ResponseBody
@@ -122,7 +138,12 @@ public class CustomerDataController {
 		JSONObject requestOptionalParams = JSONObject.fromObject(map.get("optionalParams"));//筛选条件
 		JSONArray requestRemoveCustomerIds = JSONArray.fromObject(map.get("removeCustomerIds"));//要排除的消费者id
 
-		List<Customer> customers = customerDataService.getPageCustomerForOptionalParams(requestNecessaryParams, requestOptionalParams,requestRemoveCustomerIds, eachPageRowNum, startPosition);
+		boolean infointegratedSwitch = false;//默认开关是关的,就是要筛选信息不完整的消费者
+		if(map.containsKey("infointegratedSwitch")){
+			infointegratedSwitch = (boolean) map.get("infointegratedSwitch");
+		}
+		
+		List<Customer> customers = customerDataService.getPageCustomerForOptionalParams(requestNecessaryParams, requestOptionalParams,requestRemoveCustomerIds, eachPageRowNum, startPosition,infointegratedSwitch);
 		List<Customer_Out> customer_Outs = new ArrayList<>();
 		for(Customer customer : customers){
 			ManageCustomer manageCustomer = manageCustomerService.getManageCustomerByCustomerId(customer.getCustomerid());
@@ -144,6 +165,8 @@ public class CustomerDataController {
 	 * "necessaryParams":"{"34": "xxx", "12": "xxxx"}"
 	 * "optionalParams":"{"55": "男", "11": "xxxx"}"
 	 * "removeCustomerIds":[]
+	 * 
+	 * "infointegratedSwitch":true//对信息完整性是否筛选的开关
 	 */
 	@RequestMapping(value = "/getCustomerRecordCountForOptionalParams", method = POST)
 	@ResponseBody
@@ -154,7 +177,12 @@ public class CustomerDataController {
 		JSONObject requestContentNecessaryParams = JSONObject.fromObject(map.get("necessaryParams"));//筛选条件
 		JSONArray requestRemoveCustomerIds = JSONArray.fromObject(map.get("removeCustomerIds"));//要排除的消费者id
 		
-		int recordCount = customerDataService.getCustomerRecordCount(requestContentNecessaryParams,requestRemoveCustomerIds);
+		boolean infointegratedSwitch = false;//默认开关是关的,就是要筛选信息不完整的消费者
+		if(map.containsKey("infointegratedSwitch")){
+			infointegratedSwitch = (boolean) map.get("infointegratedSwitch");
+		} 
+		
+		int recordCount = customerDataService.getCustomerRecordCount(requestContentNecessaryParams,requestRemoveCustomerIds,infointegratedSwitch);
 
 		responsejson.put("code", 1);
 		responsejson.put("result", recordCount);
@@ -167,6 +195,8 @@ public class CustomerDataController {
 	 * 对消费者的content字段查询
 	 * "contentParams":"{"45": "男", "12": "xxxx"}"
 	 * "removeCustomerIds":[]
+	 * 
+	 * "infointegratedSwitch":true//对信息完整性是否筛选的开关
 	 */
 	@RequestMapping(value = "/getCustomerRecordCount", method = POST)
 	@ResponseBody
@@ -179,7 +209,12 @@ public class CustomerDataController {
 		JSONArray requestRemoveCustomerIds = JSONArray.fromObject(map.get("removeCustomerIds"));//要排除的消费者id
 		//System.out.println(contentParams);
 
-		int recordCount = customerDataService.getCustomerRecordCount(requestContentParams,requestRemoveCustomerIds);
+		boolean infointegratedSwitch = false;//默认开关是关的,就是要筛选信息不完整的消费者
+		if(map.containsKey("infointegratedSwitch")){
+			infointegratedSwitch = (boolean) map.get("infointegratedSwitch");
+		}
+		
+		int recordCount = customerDataService.getCustomerRecordCount(requestContentParams,requestRemoveCustomerIds,infointegratedSwitch);
 
 		responsejson.put("code", 1);
 		responsejson.put("result", recordCount);
@@ -193,6 +228,8 @@ public class CustomerDataController {
 	 * "eachPageRowNum":10
 	 * "contentParams":"{"12": "男", "33": "xxxx"}"
 	 * "removeCustomerIds":[]
+	 * 
+	 * "infointegratedSwitch":true//对信息完整性是否筛选的开关
 	 */
 	@RequestMapping(value = "/getPageCustomer", method = POST)
 	@ResponseBody
@@ -205,8 +242,13 @@ public class CustomerDataController {
 		int startPosition = (currentPageNum - 1) * eachPageRowNum;//startPosition 取值为 0  10 20
 		JSONObject requestContentParams = JSONObject.fromObject(map.get("contentParams"));//筛选条件
 		JSONArray requestRemoveCustomerIds = JSONArray.fromObject(map.get("removeCustomerIds"));//要排除的消费者id
-
-		List<Customer> customers = customerDataService.getPageCustomer(requestContentParams,requestRemoveCustomerIds,eachPageRowNum, startPosition);
+		
+		boolean infointegratedSwitch = false;//默认开关是关的,就是要筛选信息不完整的消费者
+		if(map.containsKey("infointegratedSwitch")){
+			infointegratedSwitch = (boolean) map.get("infointegratedSwitch");
+		}
+		
+		List<Customer> customers = customerDataService.getPageCustomer(requestContentParams,requestRemoveCustomerIds,eachPageRowNum, startPosition,infointegratedSwitch);
 		List<Customer_Out> customer_Outs = new ArrayList<>();
 		for(Customer customer : customers){
 			ManageCustomer manageCustomer = manageCustomerService.getManageCustomerByCustomerId(customer.getCustomerid());

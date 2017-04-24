@@ -37,6 +37,11 @@ public class TestQuestionData {
 	}
 	
 //	@Test
+//	public void updateQuestionDataIntegratedToFalse(){
+//		getService().updateQuestionDataIntegratedToFalse("jinpai0001_393663a7-1740-412d-8e5c-9734c0b92382");
+//	}
+	
+//	@Test
 //	public void deleteQuestionDatasByQid() {
 //		int qid = 111;
 //		System.out.println(getService().deleteQuestionDatasByQid(qid));

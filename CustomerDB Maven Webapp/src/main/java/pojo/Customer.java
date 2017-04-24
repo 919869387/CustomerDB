@@ -9,7 +9,7 @@ public class Customer {
 	String content;
 	String customerid;
 	boolean integrated = true;
-	
+	boolean infointegrated = false;
 	
 	public boolean isIntegrated() {
 		return integrated;
@@ -34,6 +34,12 @@ public class Customer {
 	}
 	public void setCustomerid(String customerid) {
 		this.customerid = customerid;
+	}
+	public boolean isInfointegrated() {
+		return infointegrated;
+	}
+	public void setInfointegrated(boolean infointegrated) {
+		this.infointegrated = infointegrated;
 	}
 	
 }

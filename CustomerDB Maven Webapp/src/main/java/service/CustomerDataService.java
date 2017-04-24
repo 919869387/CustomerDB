@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import pojo.Customer;
 import pojo.QuestionData;
+import util.ToolGlobalParams;
 import util.ToolRequestParamsToSQLParams;
 import dao.CustomerDataDao;
 
@@ -22,6 +23,8 @@ public class CustomerDataService {
 	CustomerDataDao customerDataDao;
 	@Autowired
 	ToolRequestParamsToSQLParams toolRequestParamsToSQLParams;
+	@Autowired
+	QuestionDataService questionDataService;
 
 	/**
 	 * 
@@ -54,26 +57,36 @@ public class CustomerDataService {
 		for(int i=0;i<customerids.size();i++){
 			String customerid = customerids.get(i);
 			Customer customer = customerDataDao.getCustomerByCustomerid(customerid);
-			if(customer.isIntegrated()){
-				JSONObject newContent = new JSONObject();
-				//得到原始content
-				JSONObject content = JSONObject.fromObject(customer.getContent());
-				Iterator it = content.keys();  
-				while (it.hasNext()) {  
-					String key = (String) it.next();  
-					JSONObject value_datetime = content.getJSONObject(key);
-					JSONObject newValue_datetime = daleteValue(value_datetime,recordtime);
-					if(newValue_datetime.size()!=0){
-						newContent.put(key, newValue_datetime);
-					}
+
+			JSONObject newContent = new JSONObject();
+			//得到原始content
+			JSONObject content = JSONObject.fromObject(customer.getContent());
+			Iterator it = content.keys();  
+			while (it.hasNext()) {  
+				String key = (String) it.next();  
+				JSONObject value_datetime = content.getJSONObject(key);
+				JSONObject newValue_datetime = daleteValue(value_datetime,recordtime);
+				if(newValue_datetime.size()!=0){
+					newContent.put(key, newValue_datetime);
 				}
-				customer.setContent(newContent.toString());
-				if(!updateCustomer(customer)){
+			}
+			//查看删除后customer信息是否完全
+			if(newContent.keySet().size()==0){
+				//说明这个消费者是从问卷添加而来,此时他的信息为空,就将他删除
+				if(!customerDataDao.deleteNoContentCustomer(customerid)){
 					return false;
 				}
 			}else{
-				//如果Integrated为false,说明这条记录可以直接删除(没有电话信息)
-				if(!customerDataDao.deleteNoIntegratedCustomer(customerid)){
+				if(!newContent.containsKey(ToolGlobalParams.telnumberTagId)){
+					//将QuestionData表中Integrated置为False
+					if(!questionDataService.updateQuestionDataIntegratedToFalse(customerid)){
+						return false;
+					}
+					customer.setIntegrated(false);
+					customer.setInfointegrated(false);
+				}
+				customer.setContent(newContent.toString());
+				if(!updateCustomer(customer)){
 					return false;
 				}
 			}
@@ -115,13 +128,13 @@ public class CustomerDataService {
 	 * "optionalParams = {"42": "男", "11": "xxxx"}"
 	 * "removeCustomerIds":[]
 	 */
-	public List<Customer> getCustomersForOptionalParams(JSONObject requestNecessaryParams,JSONObject requestOptionalParams,JSONArray requestRemoveCustomerIds) {
+	public List<Customer> getCustomersForOptionalParams(JSONObject requestNecessaryParams,JSONObject requestOptionalParams,JSONArray requestRemoveCustomerIds,boolean infointegratedSwitch) {
 
 		List<Customer> customers = null;
 
 		if(requestOptionalParams.size()==0){
 			//如果用户没有写可选参数
-			customers = getCustomers(requestNecessaryParams,requestRemoveCustomerIds);
+			customers = getCustomers(requestNecessaryParams,requestRemoveCustomerIds,infointegratedSwitch);
 			//System.out.println("没有可选参数");
 		}else{
 
@@ -129,8 +142,8 @@ public class CustomerDataService {
 			requestTotalParams.putAll(requestNecessaryParams);
 			requestTotalParams.putAll(requestOptionalParams);
 
-			List<Customer> customers_FitstPart = getCustomers(requestTotalParams,requestRemoveCustomerIds);
-			List<Customer> customers_SecondPart = getCustomersExtra(requestTotalParams, requestNecessaryParams,requestRemoveCustomerIds);
+			List<Customer> customers_FitstPart = getCustomers(requestTotalParams,requestRemoveCustomerIds,infointegratedSwitch);
+			List<Customer> customers_SecondPart = getCustomersExtra(requestTotalParams, requestNecessaryParams,requestRemoveCustomerIds,infointegratedSwitch);
 
 			customers_FitstPart.addAll(customers_SecondPart);//这句话是将第二部分添加进来,这样第一部分就变成完整的了
 			customers = customers_FitstPart;
@@ -145,26 +158,26 @@ public class CustomerDataService {
 	 * 整表查询
 	 * 对于整表查询，需要数据归并
 	 */
-	public List<Customer> getCustomers(JSONObject requestContentParams,JSONArray requestRemoveCustomerIds) {
+	public List<Customer> getCustomers(JSONObject requestContentParams,JSONArray requestRemoveCustomerIds,boolean infointegratedSwitch) {
 
 		List<Customer> customers = null;
 		if(requestContentParams.size()!=0 && requestRemoveCustomerIds.size()!=0){
 			//说明有请求参数,将筛选参数转化为SQL语句格式
 			String contentParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestContentParams);
 			String removeCustomerIds_SQL = toolRequestParamsToSQLParams.requestRemoveCustomerIdsToSQLRemoveCustomerIds(requestRemoveCustomerIds);
-			customers = customerDataDao.getCustomerDatas(contentParams,removeCustomerIds_SQL);
+			customers = customerDataDao.getCustomerDatas(contentParams,removeCustomerIds_SQL,infointegratedSwitch);
 		}else if(requestContentParams.size()==0 && requestRemoveCustomerIds.size()!=0){
 			String contentParams = "";
 			String removeCustomerIds_SQL = toolRequestParamsToSQLParams.requestRemoveCustomerIdsToSQLRemoveCustomerIds(requestRemoveCustomerIds);
-			customers = customerDataDao.getCustomerDatas(contentParams,removeCustomerIds_SQL);
+			customers = customerDataDao.getCustomerDatas(contentParams,removeCustomerIds_SQL,infointegratedSwitch);
 		}else if(requestContentParams.size()!=0 && requestRemoveCustomerIds.size()==0){
 			String contentParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestContentParams);
 			String removeCustomerIds_SQL = "";
-			customers = customerDataDao.getCustomerDatas(contentParams,removeCustomerIds_SQL);
+			customers = customerDataDao.getCustomerDatas(contentParams,removeCustomerIds_SQL,infointegratedSwitch);
 		}else{
 			String contentParams = "";
 			String removeCustomerIds_SQL = "";
-			customers = customerDataDao.getCustomerDatas(contentParams,removeCustomerIds_SQL);
+			customers = customerDataDao.getCustomerDatas(contentParams,removeCustomerIds_SQL,infointegratedSwitch);
 		}
 
 		for(Customer customer : customers){
@@ -192,19 +205,23 @@ public class CustomerDataService {
 			String oldContent = customer.getContent();
 			String newContent = updateCustomerContent(oldContent,data.getData(),recordtime);
 			customer.setContent(newContent);
+			customer.setInfointegrated(true);
 			return updateCustomer(customer);
 		}else{
 			//原来Customerdata表没有这个消费者
 			Customer customer = new Customer();
 			customer.setCustomerid(data.getCustomerid());
 			customer.setIntegrated(data.isIntegrated());
+			if(data.isIntegrated()){
+				customer.setInfointegrated(true);
+			}
 			String oldContent = new JSONObject().toString();
 			String content = updateCustomerContent(oldContent,data.getData(),recordtime);
 			customer.setContent(content);
 			return insertCustomer(customer);
 		}
 	}
-	
+
 
 	/**
 	 * 
@@ -279,13 +296,13 @@ public class CustomerDataService {
 	 * "optionalParams = {"sex": "男", "xx": "xxxx"}"
 	 * "removeCustomerIds":[]
 	 */
-	public List<Customer> getPageCustomerForOptionalParams(JSONObject requestNecessaryParams,JSONObject requestOptionalParams,JSONArray requestRemoveCustomerIds,int eachPageRowNum, int startPosition) {
+	public List<Customer> getPageCustomerForOptionalParams(JSONObject requestNecessaryParams,JSONObject requestOptionalParams,JSONArray requestRemoveCustomerIds,int eachPageRowNum, int startPosition,boolean infointegratedSwitch) {
 
 		List<Customer> customers = null;
 
 		if(requestOptionalParams.size()==0){
 			//如果用户没有写可选参数
-			customers = getPageCustomer(requestNecessaryParams,requestRemoveCustomerIds,eachPageRowNum, startPosition);
+			customers = getPageCustomer(requestNecessaryParams,requestRemoveCustomerIds,eachPageRowNum, startPosition,infointegratedSwitch);
 			//System.out.println("没有可选参数");
 		}else{
 
@@ -297,13 +314,13 @@ public class CustomerDataService {
 			int endPosition = startPosition + eachPageRowNum;
 
 			//得到所有条件下查询的总数(数量少)
-			int countTotalParamsCustomer = getCustomerRecordCount(requestTotalParams,requestRemoveCustomerIds);
+			int countTotalParamsCustomer = getCustomerRecordCount(requestTotalParams,requestRemoveCustomerIds,infointegratedSwitch);
 
 			//1.确定分页数据在哪个结果集中查取
 			if(countTotalParamsCustomer >= endPosition){
 				//在所有条件结果中找
 				//SSystem.out.println("在所有条件结果中找");
-				customers= getPageCustomer(requestTotalParams,requestRemoveCustomerIds,eachPageRowNum, startPosition);			
+				customers= getPageCustomer(requestTotalParams,requestRemoveCustomerIds,eachPageRowNum, startPosition,infointegratedSwitch);			
 			}else if(countTotalParamsCustomer > startPosition && countTotalParamsCustomer < endPosition){
 				//这个情况只会出现一次，就是在这一个分页中既有前一段的数据又有后一段的数据这种情况
 				//在所有条件结果中找,与必要条件结果中共同查找
@@ -311,8 +328,8 @@ public class CustomerDataService {
 				//System.out.println("这个情况只会出现一次，就是在这一个分页中既有前一段的数据又有后一段的数据这种情况");
 				int rowNum_FitstPart = countTotalParamsCustomer - startPosition;
 				int rowNum_SecondPart = endPosition - countTotalParamsCustomer;
-				List<Customer> customers_FitstPart = getPageCustomer(requestTotalParams,requestRemoveCustomerIds,rowNum_FitstPart, startPosition);
-				List<Customer> customers_SecondPart = getPageCustomerExtra(requestTotalParams, requestNecessaryParams,requestRemoveCustomerIds, rowNum_SecondPart, 0);
+				List<Customer> customers_FitstPart = getPageCustomer(requestTotalParams,requestRemoveCustomerIds,rowNum_FitstPart, startPosition,infointegratedSwitch);
+				List<Customer> customers_SecondPart = getPageCustomerExtra(requestTotalParams, requestNecessaryParams,requestRemoveCustomerIds, rowNum_SecondPart, 0,infointegratedSwitch);
 
 				customers_FitstPart.addAll(customers_SecondPart);//这句话是将第二部分添加进来,这样第一部分就变成完整的了
 				customers = customers_FitstPart;
@@ -320,7 +337,7 @@ public class CustomerDataService {
 				//只在必要条件结果中共同查找
 				//System.out.println("只在必要条件结果中共同查找");
 				int startPositionExtra = startPosition - countTotalParamsCustomer;//将起始位置进行转换
-				customers = getPageCustomerExtra(requestTotalParams, requestNecessaryParams, requestRemoveCustomerIds,eachPageRowNum, startPositionExtra);
+				customers = getPageCustomerExtra(requestTotalParams, requestNecessaryParams, requestRemoveCustomerIds,eachPageRowNum, startPositionExtra,infointegratedSwitch);
 			}
 		}
 		return customers;
@@ -375,7 +392,7 @@ public class CustomerDataService {
 	 * 统计总数  对jsonb用户数据的查询
 	 * 整表查询
 	 */
-	public int getCustomerRecordCount(JSONObject requestContentParams,JSONArray requestRemoveCustomerIds) {
+	public int getCustomerRecordCount(JSONObject requestContentParams,JSONArray requestRemoveCustomerIds,boolean infointegratedSwitch) {
 
 		int recordCount = 0;
 
@@ -383,19 +400,19 @@ public class CustomerDataService {
 			//说明有请求参数,将筛选参数转化为SQL语句格式
 			String contentParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestContentParams);
 			String removeCustomerIds_SQL = toolRequestParamsToSQLParams.requestRemoveCustomerIdsToSQLRemoveCustomerIds(requestRemoveCustomerIds);
-			recordCount = customerDataDao.getCustomerRecordCount(contentParams,removeCustomerIds_SQL);
+			recordCount = customerDataDao.getCustomerRecordCount(contentParams,removeCustomerIds_SQL,infointegratedSwitch);
 		}else if(requestContentParams.size()==0 && requestRemoveCustomerIds.size()!=0){
 			String contentParams = "";
 			String removeCustomerIds_SQL = toolRequestParamsToSQLParams.requestRemoveCustomerIdsToSQLRemoveCustomerIds(requestRemoveCustomerIds);
-			recordCount = customerDataDao.getCustomerRecordCount(contentParams,removeCustomerIds_SQL);
+			recordCount = customerDataDao.getCustomerRecordCount(contentParams,removeCustomerIds_SQL,infointegratedSwitch);
 		}else if(requestContentParams.size()!=0 && requestRemoveCustomerIds.size()==0){
 			String contentParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestContentParams);
 			String removeCustomerIds_SQL = "";
-			recordCount = customerDataDao.getCustomerRecordCount(contentParams,removeCustomerIds_SQL);
+			recordCount = customerDataDao.getCustomerRecordCount(contentParams,removeCustomerIds_SQL,infointegratedSwitch);
 		}else{
 			String contentParams = "";
 			String removeCustomerIds_SQL = "";
-			recordCount = customerDataDao.getCustomerRecordCount(contentParams,removeCustomerIds_SQL);
+			recordCount = customerDataDao.getCustomerRecordCount(contentParams,removeCustomerIds_SQL,infointegratedSwitch);
 		}
 		return recordCount;
 	}
@@ -409,7 +426,7 @@ public class CustomerDataService {
 	 * 当用户所给条件筛选出的样本不够用时，需要通过去可选条件来进行筛选
 	 * contentTotalParams > contentNecessaryParams
 	 */
-	public List<Customer> getPageCustomerExtra(JSONObject requestTotalParams,JSONObject requestNecessaryParams,JSONArray requestRemoveCustomerIds,int eachPageRowNum, int startPosition) {
+	public List<Customer> getPageCustomerExtra(JSONObject requestTotalParams,JSONObject requestNecessaryParams,JSONArray requestRemoveCustomerIds,int eachPageRowNum, int startPosition,boolean infointegratedSwitch) {
 
 		List<Customer> customers = null;
 		if(requestNecessaryParams.size()!=0 && requestRemoveCustomerIds.size()!=0){
@@ -417,22 +434,22 @@ public class CustomerDataService {
 			String contentTotalParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestTotalParams);
 			String contentNecessaryParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestNecessaryParams);
 			String removeCustomerIds_SQL = toolRequestParamsToSQLParams.requestRemoveCustomerIdsToSQLRemoveCustomerIds(requestRemoveCustomerIds);
-			customers = customerDataDao.getPageCustomerDataExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL, eachPageRowNum, startPosition);
+			customers = customerDataDao.getPageCustomerDataExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL, eachPageRowNum, startPosition,infointegratedSwitch);
 		}else if(requestNecessaryParams.size()==0 && requestRemoveCustomerIds.size()!=0){
 			String contentTotalParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestTotalParams);
 			String contentNecessaryParams = "";
 			String removeCustomerIds_SQL = toolRequestParamsToSQLParams.requestRemoveCustomerIdsToSQLRemoveCustomerIds(requestRemoveCustomerIds);
-			customers = customerDataDao.getPageCustomerDataExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL, eachPageRowNum, startPosition);
+			customers = customerDataDao.getPageCustomerDataExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL, eachPageRowNum, startPosition,infointegratedSwitch);
 		}else if(requestNecessaryParams.size()!=0 && requestRemoveCustomerIds.size()==0){
 			String contentTotalParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestTotalParams);
 			String contentNecessaryParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestNecessaryParams);
 			String removeCustomerIds_SQL = "";
-			customers = customerDataDao.getPageCustomerDataExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL, eachPageRowNum, startPosition);
+			customers = customerDataDao.getPageCustomerDataExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL, eachPageRowNum, startPosition,infointegratedSwitch);
 		}else{
 			String contentTotalParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestTotalParams);
 			String contentNecessaryParams = "";
 			String removeCustomerIds_SQL = "";
-			customers = customerDataDao.getPageCustomerDataExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL, eachPageRowNum, startPosition);
+			customers = customerDataDao.getPageCustomerDataExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL, eachPageRowNum, startPosition,infointegratedSwitch);
 		}
 
 		for(Customer customer : customers){
@@ -453,7 +470,7 @@ public class CustomerDataService {
 	 * 当用户所给条件筛选出的样本不够用时，需要通过去可选条件来进行筛选
 	 * contentTotalParams > contentNecessaryParams
 	 */
-	public List<Customer> getCustomersExtra(JSONObject requestTotalParams,JSONObject requestNecessaryParams,JSONArray requestRemoveCustomerIds) {
+	public List<Customer> getCustomersExtra(JSONObject requestTotalParams,JSONObject requestNecessaryParams,JSONArray requestRemoveCustomerIds,boolean infointegratedSwitch) {
 
 		List<Customer> customers = null;
 		if(requestNecessaryParams.size()!=0 && requestRemoveCustomerIds.size()!=0){
@@ -461,22 +478,22 @@ public class CustomerDataService {
 			String contentTotalParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestTotalParams);
 			String contentNecessaryParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestNecessaryParams);
 			String removeCustomerIds_SQL = toolRequestParamsToSQLParams.requestRemoveCustomerIdsToSQLRemoveCustomerIds(requestRemoveCustomerIds);
-			customers = customerDataDao.getCustomerDatasExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL);
+			customers = customerDataDao.getCustomerDatasExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL,infointegratedSwitch);
 		}else if(requestNecessaryParams.size()==0 && requestRemoveCustomerIds.size()!=0){
 			String contentTotalParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestTotalParams);
 			String contentNecessaryParams = "";
 			String removeCustomerIds_SQL = toolRequestParamsToSQLParams.requestRemoveCustomerIdsToSQLRemoveCustomerIds(requestRemoveCustomerIds);
-			customers = customerDataDao.getCustomerDatasExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL);
+			customers = customerDataDao.getCustomerDatasExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL,infointegratedSwitch);
 		}else if(requestNecessaryParams.size()!=0 && requestRemoveCustomerIds.size()==0){
 			String contentTotalParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestTotalParams);
 			String contentNecessaryParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestNecessaryParams);
 			String removeCustomerIds_SQL = "";
-			customers = customerDataDao.getCustomerDatasExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL);
+			customers = customerDataDao.getCustomerDatasExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL,infointegratedSwitch);
 		}else{
 			String contentTotalParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestTotalParams);
 			String contentNecessaryParams = "";
 			String removeCustomerIds_SQL = "";
-			customers = customerDataDao.getCustomerDatasExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL);
+			customers = customerDataDao.getCustomerDatasExtra(contentTotalParams, contentNecessaryParams, removeCustomerIds_SQL,infointegratedSwitch);
 		}
 
 		for(Customer customer : customers){
@@ -495,26 +512,26 @@ public class CustomerDataService {
 	 * 整表查询
 	 * 对于整表查询，需要数据归并
 	 */
-	public List<Customer> getPageCustomer(JSONObject requestContentParams,JSONArray requestRemoveCustomerIds,int eachPageRowNum, int startPosition) {
+	public List<Customer> getPageCustomer(JSONObject requestContentParams,JSONArray requestRemoveCustomerIds,int eachPageRowNum, int startPosition,boolean infointegratedSwitch) {
 
 		List<Customer> customers = null;
 		if(requestContentParams.size()!=0 && requestRemoveCustomerIds.size()!=0){
 			//说明有请求参数,将筛选参数转化为SQL语句格式
 			String contentParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestContentParams);
 			String removeCustomerIds_SQL = toolRequestParamsToSQLParams.requestRemoveCustomerIdsToSQLRemoveCustomerIds(requestRemoveCustomerIds);
-			customers = customerDataDao.getPageCustomerData(contentParams,removeCustomerIds_SQL,eachPageRowNum,startPosition);
+			customers = customerDataDao.getPageCustomerData(contentParams,removeCustomerIds_SQL,eachPageRowNum,startPosition,infointegratedSwitch);
 		}else if(requestContentParams.size()==0 && requestRemoveCustomerIds.size()!=0){
 			String contentParams = "";
 			String removeCustomerIds_SQL = toolRequestParamsToSQLParams.requestRemoveCustomerIdsToSQLRemoveCustomerIds(requestRemoveCustomerIds);
-			customers = customerDataDao.getPageCustomerData(contentParams,removeCustomerIds_SQL,eachPageRowNum,startPosition);
+			customers = customerDataDao.getPageCustomerData(contentParams,removeCustomerIds_SQL,eachPageRowNum,startPosition,infointegratedSwitch);
 		}else if(requestContentParams.size()!=0 && requestRemoveCustomerIds.size()==0){
 			String contentParams = toolRequestParamsToSQLParams.requestParamsToSQLParamsForCustomerData(requestContentParams);
 			String removeCustomerIds_SQL = "";
-			customers = customerDataDao.getPageCustomerData(contentParams,removeCustomerIds_SQL,eachPageRowNum,startPosition);
+			customers = customerDataDao.getPageCustomerData(contentParams,removeCustomerIds_SQL,eachPageRowNum,startPosition,infointegratedSwitch);
 		}else{
 			String contentParams = "";
 			String removeCustomerIds_SQL = "";
-			customers = customerDataDao.getPageCustomerData(contentParams,removeCustomerIds_SQL,eachPageRowNum,startPosition);
+			customers = customerDataDao.getPageCustomerData(contentParams,removeCustomerIds_SQL,eachPageRowNum,startPosition,infointegratedSwitch);
 		}
 
 		for(Customer customer : customers){
@@ -621,8 +638,4 @@ public class CustomerDataService {
 		}
 		return newJson.toString();
 	}
-
-
-
-
 }

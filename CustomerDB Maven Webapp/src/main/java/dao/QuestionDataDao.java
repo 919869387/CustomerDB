@@ -23,6 +23,22 @@ public class QuestionDataDao {
 	/**
 	 * 
 	 * 作者：杨潇
+	 * 创建时间：2017年4月24日下午1:11:13
+	 * 
+	 * 方法名：updateQuestionDataIntegratedToFalse
+	 * 方法描述：修改uestionData的Integrated为false
+	 */
+	public boolean updateQuestionDataIntegratedToFalse(String customerid) {
+		String sql = "update questiondata set integrated=false where customerid=:customerid";
+		Map paramMap=new HashMap();
+		paramMap.put("customerid", customerid);
+		int count = namedParameterJdbcTemplate.update(sql, paramMap);
+		return count >= 0 ? true : false;
+	}
+	
+	/**
+	 * 
+	 * 作者：杨潇
 	 * 创建时间：2017年3月11日上午11:27:06
 	 *
 	 * 方法名：updateQuestionData

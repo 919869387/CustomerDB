@@ -56,26 +56,23 @@ public class TestCustomerDataService {
 	
 //	@Test
 //	public void getCustomersForOptionalParams() {
-//		ApplicationContext context = new ClassPathXmlApplicationContext(
-//				"spring.xml");
-//		CustomerDataService service = (CustomerDataService) context
-//				.getBean("customerDataService");
 //
-//		//String necessaryParams = "{\"sex\": \"男\"}";
-//		String necessaryParams = "{}";
+//		String necessaryParams = "{\"27\": \"男\"}";
+//		//String necessaryParams = "{}";
 //		//String optionalParams = "{\"x\": \"xx\",\"name\": \"游秀强\"}";
 //		String optionalParams = "{}";
-//		//String removeCustomerIds = "[]";
-//		String removeCustomerIds = "['jinpai0001_3376c97c-b9f7-4943-aa37-c74cc48050bd','jinpai0001_50e91807-dc7c-4203-b833-7986b7815d84']";
+//		String removeCustomerIds = "[]";
+//		//String removeCustomerIds = "['jinpai0001_3376c97c-b9f7-4943-aa37-c74cc48050bd','jinpai0001_50e91807-dc7c-4203-b833-7986b7815d84']";
 //
 //		JSONObject requestNecessaryParams = JSONObject.fromObject(necessaryParams);
 //		JSONObject requestOptionalParams = JSONObject.fromObject(optionalParams);
 //		JSONArray requestRemoveCustomerIds = JSONArray.fromObject(removeCustomerIds);
 //		
-//		List<Customer> customers = service.getCustomersForOptionalParams(requestNecessaryParams, requestOptionalParams, requestRemoveCustomerIds);
+//		List<Customer> customers = getService().getCustomersForOptionalParams(requestNecessaryParams, requestOptionalParams, requestRemoveCustomerIds,true);
 //		for (Customer customer : customers) {
 //			System.out.println(customer.getContent());
 //		}
+//		System.out.println(customers.size());
 //	}
 //
 //	@Test

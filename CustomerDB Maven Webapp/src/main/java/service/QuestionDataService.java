@@ -20,7 +20,19 @@ public class QuestionDataService {
 	QuestionDataDao questionDataDao;
 	@Autowired
 	ToolRequestParamsToSQLParams toolRequestParamsToSQLParams;
-
+	
+	/**
+	 * 
+	 * 作者：杨潇
+	 * 创建时间：2017年4月24日下午1:11:13
+	 * 
+	 * 方法名：updateQuestionDataIntegratedToFalse
+	 * 方法描述：修改uestionData的Integrated为false
+	 */
+	public boolean updateQuestionDataIntegratedToFalse(String customerid) {
+		return questionDataDao.updateQuestionDataIntegratedToFalse(customerid);
+	}
+	
 	/**
 	 * 
 	 * 作者：杨潇

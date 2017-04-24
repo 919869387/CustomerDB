@@ -38,7 +38,7 @@ public class CustomerDataDao {
 	/*
 	 * 删除信息不完整的消费者记录
 	 */
-	public boolean deleteNoIntegratedCustomer(String customerid){
+	public boolean deleteNoContentCustomer(String customerid){
 		String sql="delete from customerdata where customerid=:customerid";
 		Map paramMap=new HashMap();
 		paramMap.put("customerid", customerid);
@@ -50,7 +50,7 @@ public class CustomerDataDao {
 	 * 向customerdata表中写入一条记录
 	 */
 	public boolean insertCustomer(Customer customer){
-		String sql = "insert into customerdata(content,customerid,integrated) values(:content,:customerid,:integrated)";
+		String sql = "insert into customerdata(content,customerid,integrated,infointegrated) values(:content,:customerid,:integrated,:infointegrated)";
 		SqlParameterSource paramSource = new BeanPropertySqlParameterSource(customer);
 		int count = namedParameterJdbcTemplate.update(sql, paramSource);
 		return count > 0 ? true : false;
@@ -90,7 +90,7 @@ public class CustomerDataDao {
 	 * 根据customerid,更新消费者
 	 */
 	public boolean updateCustomer(Customer customer) {
-		String sql = "update customerdata set content=:content where customerid=:customerid";
+		String sql = "update customerdata set content=:content,integrated=:integrated,infointegrated=:infointegrated where customerid=:customerid";
 		SqlParameterSource paramSource = new BeanPropertySqlParameterSource(customer);
 		int count = namedParameterJdbcTemplate.update(sql, paramSource);
 		return count > 0 ? true : false;
@@ -100,7 +100,7 @@ public class CustomerDataDao {
 	 * 根据条件统计总数
 	 * 整表查询
 	 */
-	public int getCustomerRecordCount(String contentParams,String removeCustomerIds) {
+	public int getCustomerRecordCount(String contentParams,String removeCustomerIds,boolean infointegratedSwitch) {
 
 		String sql = "";
 		if(contentParams.length()!=0 && removeCustomerIds.length()!=0){
@@ -115,6 +115,11 @@ public class CustomerDataDao {
 			sql = "select count(*) from customerdata where integrated";
 		}
 
+		if(infointegratedSwitch==true){
+			//开关是开的,说明只筛选信息完整的消费者
+			sql = sql + " and infointegrated";
+		}
+		
 		int count = namedParameterJdbcTemplate.getJdbcOperations().queryForInt(sql);
 		return count;
 	}
@@ -124,7 +129,7 @@ public class CustomerDataDao {
 	 * 不分页查询
 	 * 根据条件查找数据,没有可选条件
 	 */
-	public List<Customer> getCustomerDatas(String contentParams,String removeCustomerIds) {
+	public List<Customer> getCustomerDatas(String contentParams,String removeCustomerIds,boolean infointegratedSwitch) {
 
 		String sql = "";
 		if(contentParams.length()!=0 && removeCustomerIds.length()!=0){
@@ -138,7 +143,12 @@ public class CustomerDataDao {
 		}else{
 			sql = "select * from customerdata where integrated";
 		}
-
+		
+		if(infointegratedSwitch==true){
+			//开关是开的,说明只筛选信息完整的消费者
+			sql = sql + " and infointegrated";
+		}
+		
 		RowMapper<Customer> rowMapper = new BeanPropertyRowMapper<>(Customer.class);
 		List<Customer> customers = namedParameterJdbcTemplate.getJdbcOperations().query(sql, rowMapper);
 		return customers;
@@ -149,7 +159,7 @@ public class CustomerDataDao {
 	 * 根据条件查找分页数据,没有可选条件
 	 * 整表查询
 	 */
-	public List<Customer> getPageCustomerData(String contentParams,String removeCustomerIds,int eachPageRowNum, int startPosition) {
+	public List<Customer> getPageCustomerData(String contentParams,String removeCustomerIds,int eachPageRowNum, int startPosition,boolean infointegratedSwitch) {
 
 		String sql = "";
 		if(contentParams.length()!=0 && removeCustomerIds.length()!=0){
@@ -163,6 +173,12 @@ public class CustomerDataDao {
 		}else{
 			sql = "select * from customerdata where integrated";
 		}
+		
+		if(infointegratedSwitch==true){
+			//开关是开的,说明只筛选信息完整的消费者
+			sql = sql + " and infointegrated";
+		}
+		
 		sql = sql + " order by id asc limit " + eachPageRowNum + " offset " + startPosition;
 
 		RowMapper<Customer> rowMapper = new BeanPropertyRowMapper<>(Customer.class);
@@ -188,7 +204,7 @@ public class CustomerDataDao {
 	 * 当用户所给条件筛选出的样本不够用时，需要通过去可选条件来进行筛选
 	 * contentTotalParams > contentNecessaryParams
 	 */
-	public List<Customer> getPageCustomerDataExtra(String contentTotalParams,String contentNecessaryParams,String removeCustomerIds,int eachPageRowNum, int startPosition) {
+	public List<Customer> getPageCustomerDataExtra(String contentTotalParams,String contentNecessaryParams,String removeCustomerIds,int eachPageRowNum, int startPosition,boolean infointegratedSwitch) {
 
 		String sql = "";
 
@@ -207,6 +223,12 @@ public class CustomerDataDao {
 			sql = "select * from customerdata where integrated and customerid not in(select customerid from customerdata where "+contentTotalParams+")";
 
 		}
+		
+		if(infointegratedSwitch==true){
+			//开关是开的,说明只筛选信息完整的消费者
+			sql = sql + " and infointegrated";
+		}
+		
 		sql = sql + " order by id asc limit " + eachPageRowNum + " offset " + startPosition;
 
 		//System.out.println(sql);
@@ -221,7 +243,7 @@ public class CustomerDataDao {
 	 * 当用户所给条件筛选出的样本不够用时，需要通过去可选条件来进行筛选
 	 * contentTotalParams > contentNecessaryParams
 	 */
-	public List<Customer> getCustomerDatasExtra(String contentTotalParams,String contentNecessaryParams,String removeCustomerIds) {
+	public List<Customer> getCustomerDatasExtra(String contentTotalParams,String contentNecessaryParams,String removeCustomerIds,boolean infointegratedSwitch) {
 
 		String sql = "";
 
@@ -241,7 +263,10 @@ public class CustomerDataDao {
 
 		}
 		//System.out.println(sql);
-
+		if(infointegratedSwitch==true){
+			//开关是开的,说明只筛选信息完整的消费者
+			sql = sql + " and infointegrated";
+		}
 		RowMapper<Customer> rowMapper = new BeanPropertyRowMapper<>(Customer.class);
 		List<Customer> customers = namedParameterJdbcTemplate.getJdbcOperations().query(sql, rowMapper);
 		return customers;
