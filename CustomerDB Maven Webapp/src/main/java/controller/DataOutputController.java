@@ -11,7 +11,6 @@ import net.sf.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -44,7 +43,7 @@ public class DataOutputController {
 			return null;
 		}
 
-		String filePath = session.getServletContext().getRealPath("/")+"tempFile\\";
+		String filePath = session.getServletContext().getRealPath("/");
 
 		//生成文件
 		File file = null;
@@ -76,7 +75,7 @@ public class DataOutputController {
 	@ResponseBody
 	public String customerDataOutputToExcel(HttpSession session,HttpServletResponse response) {
 
-		String filePath = session.getServletContext().getRealPath("/")+"tempFile\\";
+		String filePath = session.getServletContext().getRealPath("/");
 
 		//生成文件
 		File file = null;
