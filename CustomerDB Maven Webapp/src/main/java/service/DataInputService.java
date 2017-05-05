@@ -88,8 +88,8 @@ public class DataInputService {
 	public boolean deleteQuestionDataAndCustomerDataByQid(int qid){
 		//1.根据qid得到这个问卷对应的所有customerid,再得到时间戳,这样可以删除CustomerData表里的数据
 		List<String> customerids = questionDataService.getCustomeridsByQid(qid);
-		String recordtime = tagTreeService.getTagTree(qid).getRecordtime().toString();
-		if(customerDataService.daleteValueByCustomeridsAndRecordtime(customerids, recordtime)){
+		List<String> recordTimes = questionDataService.getRecordTimesByQid(qid);
+		if(customerDataService.daleteValueByCustomeridsAndRecordtime(customerids, recordTimes)){
 			//2.根据qid删除QuestionData里面的数据
 			if(questionDataService.deleteQuestionDatasByQid(qid)){
 				return true;
@@ -143,7 +143,7 @@ public class DataInputService {
 	 * 方法描述：插入问卷id,问卷名,以及根据对应关系生成问卷的标签树(含标签值)
 	 * 
 	 * 步骤：1.删除所有信息消费者数据、标签树等信息
-	 * 	   2.根据relations得到问卷的标签树，将qid、qname、标签树、时间戳 放入标签树表中
+	 * 	   2.根据relations得到问卷的标签树，将qid、qname、标签树 放入标签树表中
 	 * 	   3.对tagstore中使用了的标签使用次数+1
 	 *	   4.根据relations得到radio标签的值，将tagid、qid、标签值 放入标签值表中
 	 *		
@@ -152,12 +152,8 @@ public class DataInputService {
 	@Transactional
 	public boolean InputQInfoAndRelations(int qid,String qname,JSONArray relations){
 		if(deleteAllInfoByQid(qid)){
-			//生成时间戳
-			Date date = new Date(); 
-			Timestamp recordtime = new Timestamp(date.getTime());
-
 			//1.将根据relations生成好的标签树插入表中
-			if(tagTreeService.insertTagTree(qid, qname, relations, recordtime)){
+			if(tagTreeService.insertTagTree(qid, qname, relations)){
 				//2.得到标签树中所有的标签，将它们的使用次数+1
 				List<Tag> tagList = tagTreeService.getTagListByQid(qid);
 				if(tagStoreService.batchUpdateBeused_timesAdd(tagList)){
@@ -198,10 +194,12 @@ public class DataInputService {
 	public int InputQuertionDataAndCustomerData(int qid,JSONArray sampleData_arr){
 		int insertRecordCount = 0;
 		if(tagTreeService.existQid(qid)){
-			TagTree tagtree = tagTreeService.getTagTree(qid);
-			String recordtime = tagtree.getRecordtime().toString();//只要是同一个qid,使用的recordtime都相同
-
 			if(sampleData_arr.size() != 0){
+
+				//生成时间戳,这里同一个问卷qid,会有多个时间戳
+				Date date = new Date(); 
+				Timestamp recordtime = new Timestamp(date.getTime());
+
 				//说明从问卷数据库中获取到了数据
 				for(int i=0;i<sampleData_arr.size();i++){
 					JSONObject sampleData = sampleData_arr.getJSONObject(i);
@@ -210,24 +208,24 @@ public class DataInputService {
 					//检查问卷数据以及CustomerData表中是否有customerid
 					if(existCustomerIdInCustomerData(sampleData)){
 						//如果有customerid
-						questionData = createQuestionDataPoJoHaveCustomerId(sampleData, qid);
+						questionData = createQuestionDataPoJoHaveCustomerId(sampleData, qid,recordtime);
 					}else{
 						//如果没有customerid
 						//检查Telnumber是否在CustomerData表中
 						String customerId = existTelNumberInCustomerData(sampleData);
 						if(customerId!=null){
 							//电话在Customerdata表中存在
-							questionData = createQuestionDataPoJo_NoCustomerId_ExistTelnumberInCustomerData(sampleData, qid, customerId);
+							questionData = createQuestionDataPoJo_NoCustomerId_ExistTelnumberInCustomerData(sampleData, qid, customerId,recordtime);
 						}else{
 							//电话在Customerdata表中不存在,或者没有电话
-							questionData = createQuestionDataPoJoNoCustomerId(sampleData, qid);
+							questionData = createQuestionDataPoJoNoCustomerId(sampleData, qid,recordtime);
 						}
 					}
 					if(questionData!=null){
 						//1.将记录放入QuestionData表中
 						if(questionDataService.insertOrUpdateQuestionData(questionData)){
 							//2.将记录放入Customerdata表中
-							if(customerDataService.insertOrUpdateQuestionDataToCustomer(questionData, recordtime)){
+							if(customerDataService.insertOrUpdateQuestionDataToCustomer(questionData)){
 								insertRecordCount++;
 							}else{
 								throw new ExceptionCustomerData("向CustomerData插入数据失败"); 
@@ -321,7 +319,7 @@ public class DataInputService {
 	 * 2.从数据JSON中删除customerid字段
 	 * 3.构造QuestionData对象
 	 */
-	public QuestionData createQuestionDataPoJoHaveCustomerId(JSONObject data,int qid){
+	public QuestionData createQuestionDataPoJoHaveCustomerId(JSONObject data,int qid,Timestamp recordtime){
 		String customerid = data.getJSONArray("customerId").getString(0).trim();//得到每条记录的customerid
 		data.remove("customerId");//将每条记录的customerid键值对删除
 
@@ -329,6 +327,7 @@ public class DataInputService {
 		questionData.setData(data.toString());
 		questionData.setCustomerid(customerid);
 		questionData.setQid(qid);
+		questionData.setRecordtime(recordtime);
 
 		return questionData;
 	}
@@ -341,13 +340,14 @@ public class DataInputService {
 	 * 方法名：createQuestionDataPoJo_NoCustomerId_ExistTelnumberInCustomerData
 	 * 方法描述：数据没有customerid,但是Telnumber在CustomerData中
 	 */
-	public QuestionData createQuestionDataPoJo_NoCustomerId_ExistTelnumberInCustomerData(JSONObject data,int qid,String customerId){
+	public QuestionData createQuestionDataPoJo_NoCustomerId_ExistTelnumberInCustomerData(JSONObject data,int qid,String customerId,Timestamp recordtime){
 		data.remove("customerId");//将每条记录的customerid键值对删除
 
 		QuestionData questionData = new QuestionData();
 		questionData.setData(data.toString());
 		questionData.setCustomerid(customerId);
 		questionData.setQid(qid);
+		questionData.setRecordtime(recordtime);
 
 		return questionData;
 	}
@@ -360,7 +360,7 @@ public class DataInputService {
 	 * 方法名：createQuestionDataPoJoNoCustomerId
 	 * 方法描述：数据没有customerid,Telnumber不在CustomerData中
 	 */
-	public QuestionData createQuestionDataPoJoNoCustomerId(JSONObject data,int qid){
+	public QuestionData createQuestionDataPoJoNoCustomerId(JSONObject data,int qid,Timestamp recordtime){
 		data.remove("customerId");//将每条记录的customerid键值对删除
 
 		String customerid = ToolCreateCustomerId.createCustomerId(ToolGlobalParams.companyNumber_JinPai);
@@ -380,6 +380,7 @@ public class DataInputService {
 		questionData.setData(data.toString());
 		questionData.setCustomerid(customerid);
 		questionData.setQid(qid);
+		questionData.setRecordtime(recordtime);
 
 		return questionData;
 	}

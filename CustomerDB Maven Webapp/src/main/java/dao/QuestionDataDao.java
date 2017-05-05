@@ -23,6 +23,23 @@ public class QuestionDataDao {
 	/**
 	 * 
 	 * 作者：杨潇
+	 * 创建时间：2017年5月5日下午4:50:49
+	 * 
+	 * 方法名：getRecordTimesByQid
+	 * 方法描述：得到qid下面的所有时间戳
+	 */
+	public List<Map<String, Object>> getRecordTimesByQid(int qid){
+		String sql = "select distinct recordtime from questiondata where qid=:qid";
+		Map paramMap=new HashMap();
+		paramMap.put("qid", qid);
+		List<Map<String, Object>> recordTimes = namedParameterJdbcTemplate.queryForList(sql, paramMap);
+		return recordTimes;
+	} 
+	
+	
+	/**
+	 * 
+	 * 作者：杨潇
 	 * 创建时间：2017年4月24日下午1:11:13
 	 * 
 	 * 方法名：updateQuestionDataIntegratedToFalse
@@ -45,7 +62,7 @@ public class QuestionDataDao {
 	 * 方法描述：根据CustomeridAndQid更新消费者信息
 	 */
 	public boolean updateQuestionData(QuestionData questionData){
-		String sql = "update questiondata set data=:data where qid=:qid and customerid=:customerid";
+		String sql = "update questiondata set data=:data,recordtime=:recordtime where qid=:qid and customerid=:customerid";
 		SqlParameterSource paramSource = new BeanPropertySqlParameterSource(questionData);
 		int count = namedParameterJdbcTemplate.update(sql, paramSource);
 		return count > 0 ? true : false;
@@ -102,7 +119,7 @@ public class QuestionDataDao {
 	 * 向QuestionData表中写入一条记录
 	 */
 	public boolean insertQuestionData(QuestionData questionData){
-		String sql = "insert into questiondata(data,qid,customerid,integrated) values(:data,:qid,:customerid,:integrated)";
+		String sql = "insert into questiondata(data,qid,customerid,integrated,recordtime) values(:data,:qid,:customerid,:integrated,:recordtime)";
 		SqlParameterSource paramSource = new BeanPropertySqlParameterSource(questionData);
 		int count = namedParameterJdbcTemplate.update(sql, paramSource);
 		return count > 0 ? true : false;

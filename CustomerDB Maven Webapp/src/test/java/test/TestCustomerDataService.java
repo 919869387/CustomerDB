@@ -33,6 +33,20 @@ public class TestCustomerDataService {
 	}
 	
 //	@Test
+//	public void daleteValue(){
+//		JSONObject value_datetime = new JSONObject();
+//		value_datetime.put("ssss", "2017-03-21 16:46:38.323");
+//		value_datetime.put("ss", "2017-03-21 16:46:38.32");
+//		value_datetime.put("s", "2017-03-21 16:46:38.323");
+//		value_datetime.put("sss", "2017-03-21 16:46:38.32");
+//		List<String> recordTimes = new ArrayList<>();
+//		recordTimes.add("2017-03-21 16:46:38.323");
+//		recordTimes.add("2017-03-21 16:46:38.32");
+//		JSONObject newvalue_datetime = getService().daleteValue(value_datetime, recordTimes);
+//		System.out.println(newvalue_datetime.size());
+//	}
+	
+//	@Test
 //	public void existCustomerByCustomerid(){
 //		System.out.println(getService().existCustomerByCustomerid("jinpai0001_9322aeda-a102-4fde-9451-6f60286e1b54"));
 //	}

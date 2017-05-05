@@ -26,16 +26,16 @@ public class TestDataInputService {
 //	@Test
 //	public void InputQuertionDataAndCustomerData(){
 //		int qid = 1653;
-//		//int qid = 1675;
+//		int qid = 1675;
 //		JSONArray sampleData_arr = new JSONArray();
 //		JSONObject sampleData = new JSONObject();
 //		
 //		JSONArray valueTel = new JSONArray();
 //		valueTel.add("123");
 //		JSONArray valueCustomerID = new JSONArray();
-//		valueCustomerID.add("xxxx");
+//		valueCustomerID.add("jinpai0001_9c142138-bac9-4813-880e-e3076dd269b2");
 //		JSONArray valueOther = new JSONArray();
-//		valueOther.add("游戏11");
+//		valueOther.add("eee");
 //
 //		sampleData.put("106", valueOther);
 //		sampleData.put(ToolGlobalParams.telnumberTagId, valueTel);

@@ -2,6 +2,7 @@ package service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -24,6 +25,29 @@ public class QuestionDataService {
 	/**
 	 * 
 	 * 作者：杨潇
+	 * 创建时间：2017年5月5日下午4:50:09
+	 * 
+	 * 方法名：getRecordTimesByQid
+	 * 方法描述：得到qid下面的所有时间戳
+	 */
+	public List<String> getRecordTimesByQid(int qid){
+
+		List<String> recordTimes = new ArrayList<>();
+
+		List<Map<String, Object>> recordTimesMap = questionDataDao.getRecordTimesByQid(qid);
+		for(int i=0;i<recordTimesMap.size();i++){
+			Map<String, Object> map = recordTimesMap.get(i);
+			for (Object value : map.values()) {
+				recordTimes.add(value.toString());
+			}
+		}
+
+		return recordTimes;
+	}
+
+	/**
+	 * 
+	 * 作者：杨潇
 	 * 创建时间：2017年4月24日下午1:11:13
 	 * 
 	 * 方法名：updateQuestionDataIntegratedToFalse
@@ -32,7 +56,7 @@ public class QuestionDataService {
 	public boolean updateQuestionDataIntegratedToFalse(String customerid) {
 		return questionDataDao.updateQuestionDataIntegratedToFalse(customerid);
 	}
-	
+
 	/**
 	 * 
 	 * 作者：杨潇
@@ -44,7 +68,7 @@ public class QuestionDataService {
 	public List<QuestionData> getQuestionDatasByQid(int qid) {
 		return questionDataDao.getQuestionDatasByQid(qid);
 	}
-	
+
 	/**
 	 * 
 	 * 作者：杨潇

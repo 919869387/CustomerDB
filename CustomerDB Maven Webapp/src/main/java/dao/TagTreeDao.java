@@ -45,7 +45,7 @@ public class TagTreeDao {
 	 * 方法描述：分页得到TagTree表中的对象
 	 */
 	public List<TagTree> getTagTreePage(int eachPageRowNum, int startPosition){
-		String sql = "select * from tagtree order by recordtime desc limit " + eachPageRowNum + " offset " + startPosition;
+		String sql = "select * from tagtree order by id desc limit " + eachPageRowNum + " offset " + startPosition;
 
 		RowMapper<TagTree> rowMapper = new BeanPropertyRowMapper<>(TagTree.class);
 		List<TagTree> tagTrees = namedParameterJdbcTemplate.query(sql, rowMapper);
@@ -86,7 +86,7 @@ public class TagTreeDao {
 	
 	
 	public boolean insertTagTree(TagTree tagTree) {
-		String sql = "insert into tagtree(qid,qname,tree,recordtime) values(:qid,:qname,:tree,:recordtime)";
+		String sql = "insert into tagtree(qid,qname,tree) values(:qid,:qname,:tree)";
 		SqlParameterSource paramSource = new BeanPropertySqlParameterSource(tagTree);
 		int count = namedParameterJdbcTemplate.update(sql, paramSource);
 		return count > 0 ? true : false;

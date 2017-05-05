@@ -1,7 +1,5 @@
 package pojo;
 
-import java.sql.Timestamp;
-
 import net.sf.json.JSONArray;
 
 public class TagTree {
@@ -10,7 +8,7 @@ public class TagTree {
 	int qid;
 	String qname;
 	String tree = new JSONArray().toString();
-	Timestamp recordtime;
+	
 	int recordcount = 0;
 	
 	public int getId() {
@@ -37,12 +35,7 @@ public class TagTree {
 	public void setTree(String tree) {
 		this.tree = tree;
 	}
-	public Timestamp getRecordtime() {
-		return recordtime;
-	}
-	public void setRecordtime(Timestamp recordtime) {
-		this.recordtime = recordtime;
-	}
+	
 	public int getRecordcount() {
 		return recordcount;
 	}

@@ -53,7 +53,7 @@ public class CustomerDataService {
 	 * 方法名：daleteValueByCustomeridsAndRecordtime
 	 * 方法描述：根据customerid和时间戳，删除消费者信息中不需要的值
 	 */
-	public boolean daleteValueByCustomeridsAndRecordtime(List<String> customerids,String recordtime){
+	public boolean daleteValueByCustomeridsAndRecordtime(List<String> customerids,List<String> recordTimes){
 		for(int i=0;i<customerids.size();i++){
 			String customerid = customerids.get(i);
 			Customer customer = customerDataDao.getCustomerByCustomerid(customerid);
@@ -65,13 +65,13 @@ public class CustomerDataService {
 			while (it.hasNext()) {  
 				String key = (String) it.next();  
 				JSONObject value_datetime = content.getJSONObject(key);
-				JSONObject newValue_datetime = daleteValue(value_datetime,recordtime);
+				JSONObject newValue_datetime = daleteValue(value_datetime,recordTimes);
 				if(newValue_datetime.size()!=0){
 					newContent.put(key, newValue_datetime);
 				}
 			}
 			//查看删除后customer信息是否完全
-			if(newContent.keySet().size()==0){
+			if(newContent.size()==0){
 				//说明这个消费者是从问卷添加而来,此时他的信息为空,就将他删除
 				if(!customerDataDao.deleteNoContentCustomer(customerid)){
 					return false;
@@ -102,14 +102,14 @@ public class CustomerDataService {
 	 * 方法名：daleteValue
 	 * 方法描述：删除时间戳相等的值
 	 */
-	public JSONObject daleteValue(JSONObject value_datetime,String recordtime){
+	public JSONObject daleteValue(JSONObject value_datetime,List<String> recordTimes){
 		JSONObject newValue_datetime = new JSONObject();
 		Iterator it = value_datetime.keys();  
 		while (it.hasNext()) {  
 			String value = (String) it.next();//这里的value相当于key
-			if(!value_datetime.getString(value).equals(recordtime)){
-				//如果时间不相等就添加进
-				newValue_datetime.put(value, value_datetime.getString(value));
+			String datetime = value_datetime.getString(value);
+			if(!recordTimes.contains(datetime)){
+				newValue_datetime.put(value, datetime);
 			}
 		}
 		return newValue_datetime;
@@ -197,13 +197,13 @@ public class CustomerDataService {
 	 * 方法名：insertOrUpdateQuestionDataToCustomer
 	 * 方法描述：将问卷数据更新就消费者表中。根据Customerdata表是否有这个消费者,来决定是更新还是插入
 	 */
-	public boolean insertOrUpdateQuestionDataToCustomer(QuestionData data,String recordtime) {
+	public boolean insertOrUpdateQuestionDataToCustomer(QuestionData data) {
 		if(existCustomerByCustomerid(data.getCustomerid())){
 			//原来Customerdata表有这个消费者
 			//将原来数据更新
 			Customer customer = customerDataDao.getCustomerByCustomerid(data.getCustomerid());
 			String oldContent = customer.getContent();
-			String newContent = updateCustomerContent(oldContent,data.getData(),recordtime);
+			String newContent = updateCustomerContent(oldContent,data.getData(),data.getRecordtime().toString());
 			customer.setContent(newContent);
 			customer.setInfointegrated(true);
 			return updateCustomer(customer);
@@ -216,7 +216,7 @@ public class CustomerDataService {
 				customer.setInfointegrated(true);
 			}
 			String oldContent = new JSONObject().toString();
-			String content = updateCustomerContent(oldContent,data.getData(),recordtime);
+			String content = updateCustomerContent(oldContent,data.getData(),data.getRecordtime().toString());
 			customer.setContent(content);
 			return insertCustomer(customer);
 		}

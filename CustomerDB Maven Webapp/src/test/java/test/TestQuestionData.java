@@ -1,6 +1,7 @@
 package test;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,6 +36,14 @@ public class TestQuestionData {
 		
 		return service;
 	}
+	
+//	@Test
+//	public void getRecordTimesByQid(){
+//		List<String> recordTimes = getService().getRecordTimesByQid(1653);
+//		for(int i=0;i<recordTimes.size();i++){
+//			System.out.println(recordTimes.get(i));
+//		}
+//	}
 	
 //	@Test
 //	public void updateQuestionDataIntegratedToFalse(){

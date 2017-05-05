@@ -288,13 +288,12 @@ public class TagTreeService {
 	 * 
 	 * 这里同时插入了：qid,qname,tagTrees,recordtime
 	 */
-	public boolean insertTagTree(int qid,String qname,JSONArray relations,Timestamp recordtime) {
+	public boolean insertTagTree(int qid,String qname,JSONArray relations) {
 		TagTree tagTree = new TagTree();
 		tagTree.setQid(qid);
 		tagTree.setQname(qname);
 		JSONArray tagTrees = getTreesByRelation(relations);
 		tagTree.setTree(tagTrees.toString());
-		tagTree.setRecordtime(recordtime);
 
 		return tagTreeDao.insertTagTree(tagTree);
 	}

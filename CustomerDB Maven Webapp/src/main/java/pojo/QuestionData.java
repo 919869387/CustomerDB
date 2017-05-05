@@ -1,17 +1,25 @@
 package pojo;
 
+import java.sql.Timestamp;
+
 /*
  * 对应datastore数据表
  */
 public class QuestionData {
-	
+
 	int id;
 	String data;
 	int qid;
 	String customerid;
 	boolean integrated = true;
-	
-	
+	Timestamp recordtime;
+
+	public Timestamp getRecordtime() {
+		return recordtime;
+	}
+	public void setRecordtime(Timestamp recordtime) {
+		this.recordtime = recordtime;
+	}
 	public boolean isIntegrated() {
 		return integrated;
 	}
@@ -51,6 +59,6 @@ public class QuestionData {
 	public void setCustomerid(String customerid) {
 		this.customerid = customerid;
 	}
-	
-	
+
+
 }
