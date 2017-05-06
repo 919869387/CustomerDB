@@ -564,7 +564,7 @@ public class CustomerDataService {
 	/**
 	 * 
 	 * @param valuestr
-	 * @return 得到最近时间值对应的所有值
+	 * @return 得到最近时间值对应的值
 	 */
 	public String getLastTimeValue(String valuestr){
 
