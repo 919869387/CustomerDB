@@ -243,10 +243,10 @@ public class CustomerDataService {
 				JSONObject valuejson = json.getJSONObject(key);
 				for(int i=0;i<values.size();i++){
 					String value = values.getString(i).trim();
-					if(valuejson.containsKey(value)){//这个if else 逻辑可以保证key都不一样
-						valuejson.put(value, datetime);//如果这个值已经存在,就把时间替换成新的
-					}else{
-						valuejson.accumulate(value,datetime);//如果这个值不存在，accumulate是增加
+					if(!valuejson.containsKey(value)){
+						//如果这个值不存在，accumulate是增加
+						valuejson.accumulate(value,datetime);
+						//如果这个值已经存在,不添加，也不更新时间戳
 					}
 				}
 				json.put(key, valuejson);//put是替换   key : {value : datetime,value : datetime}
